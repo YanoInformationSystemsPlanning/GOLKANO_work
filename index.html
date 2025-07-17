@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Excel風スケジュール表（幅調整版）</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: sans-serif;
+      width: 100vw;
+      height: 100vh;
+      overflow: auto;
+    }
+
+    .grid {
+      display: grid;
+      /* 第1列は80px＋ノッチ回避、他は数字2文字分に */
+      grid-template-columns: calc(80px + 2.5em) repeat(31, 3ch);
+      grid-auto-rows: 30px;
+      min-width: max-content;
+    }
+
+    .cell {
+      border: 1px solid #ccc;
+      text-align: center;
+      line-height: 30px;
+      white-space: nowrap;
+      user-select: none;
+      background: white;
+      box-sizing: border-box;
+    }
+
+    /* ヘッダ行 */
+    .header-1 {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      background: #eee;
+    }
+    .header-2 {
+      position: sticky;
+      top: 30px;
+      z-index: 5;
+      background: #eee;
+    }
+    .header-3 {
+      position: sticky;
+      top: 60px;
+      z-index: 5;
+      background: #eee;
+    }
+
+    /* 左固定列 */
+    .fixed-col {
+      position: sticky;
+      left: 0;
+      background: #f8f8f8;
+      box-sizing: border-box;
+      padding-left: 2.5em; /* ノッチ回避 */
+    }
+
+    /* 左×ヘッダ は縦横ともに固定 */
+    .header-1.fixed-col { top: 0;    z-index: 7; }
+    .header-2.fixed-col { top: 30px; z-index: 7; }
+    .header-3.fixed-col { top: 60px; z-index: 7; }
+
+    .highlight-black {
+      background: black !important;
+      color: white;
+    }
+    .highlight-gray {
+      background: gray !important;
+      color: white;
+    }
+    .red {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <div class="grid" id="grid"></div>
+
+  <script>
+    const headers = ["日付","曜日","対応可能","仙石","湖畔","大箱根","川国","東名","磯子","湯本","厚国","三甲","朝霧"];
+    const days = Array.from({ length: 31 }, (_, i) => i + 1);
+    const weekdays = ["金","土","日","月","火","水","木"];
+    const weekdayRow = days.map((_, i) => weekdays[i % 7]);
+
+    const data = [
+      [2,2,2,2,3,2,2,2,2,3,2,2,3,3,3,3,3,3,3,3,2,3,2,2,2,3,2,2,2,2,2],
+      [null,null,null,null,null,5,null,null,null,null,5,null,null,null,null,null,null,5,null,null,null,null,null,null,null,null,null,null,5,null,null],
+      [3,3,3,3,5,5,3,3,3,3,5,5,3,3,3,3,3,3,5,5,3,3,3,3,3,5,3,3,3,3,3],
+      [null,null,null,null,2,null,null,null,null,1,null,null,null,null,null,2,null,null,null,null,null,null,null,1,null,null,null,null,null,null,1],
+      [null,null,null,1,null,null,null,null,null,null,null,null,1,null,null,null,null,null,1,null,null,null,null,null,null,null,null,null,null,null],
+      [1,2,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+      [null,null,null,null,null,null,null,null,null,null,null,null,2,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+      [2,null,null,2,null,null,null,null,null,null,null,null,2,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+      [null,null,3,3,null,null,null,null,null,null,null,null,3,3,null,null,null,null,3,3,null,null,3,3,null,null,null,null,null,null],
+      [null,null,null,null,5,null,null,null,null,null,null,null,null,null,null,null,null,null,5,null,null,null,3,3,null,null,null,null,null,null]
+    ];
+
+    const grid = document.getElementById("grid");
+
+    for (let r = 0; r < headers.length; r++) {
+      for (let c = 0; c <= 31; c++) {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        if (c === 0) cell.classList.add("fixed-col");
+
+        if (r === 0) {
+          cell.classList.add("header-1");
+          cell.textContent = c === 0 ? headers[0] : days[c - 1];
+        }
+        else if (r === 1) {
+          cell.classList.add("header-2");
+          cell.innerHTML = c === 0
+            ? headers[1]
+            : `<span class="${['土','日'].includes(weekdayRow[c-1])?'red':''}">${weekdayRow[c-1]}</span>`;
+        }
+        else if (r === 2) {
+          cell.classList.add("header-3");
+          cell.textContent = c === 0 ? headers[2] : "";
+          if (c > 0) {
+            cell.onclick = () => {
+              const states = ["●","▲",""];
+              const idx = (states.indexOf(cell.textContent) + 1) % states.length;
+              cell.textContent = states[idx];
+            };
+          }
+        }
+        else {
+          const val = c === 0 ? headers[r] : data[r-3][c-1];
+          cell.textContent = val ?? "";
+          if (c > 0 && val != null) {
+            cell.onclick = () => {
+              if (cell.classList.contains("highlight-black")) {
+                cell.classList.replace("highlight-black","highlight-gray");
+              } else if (cell.classList.contains("highlight-gray")) {
+                cell.classList.remove("highlight-gray");
+              } else {
+                cell.classList.add("highlight-black");
+              }
+            };
+          }
+        }
+        grid.appendChild(cell);
+      }
+    }
+  </script>
+</body>
+</html>
