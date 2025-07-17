@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>Excel風スケジュール表（幅調整版）</title>
+  <title>Excel風スケジュール表（幅4文字版）</title>
   <style>
     html, body {
       margin: 0;
@@ -15,8 +15,8 @@
 
     .grid {
       display: grid;
-      /* 第1列は80px＋ノッチ回避、他は数字2文字分に */
-      grid-template-columns: calc(80px + 2.5em) repeat(31, 3ch);
+      /* 第1列は80px＋ノッチ回避、他は数字4文字分に */
+      grid-template-columns: calc(80px + 2.5em) repeat(31, 4ch);
       grid-auto-rows: 30px;
       min-width: max-content;
     }
@@ -89,7 +89,7 @@
 
     const data = [
       [2,2,2,2,3,2,2,2,2,3,2,2,3,3,3,3,3,3,3,3,2,3,2,2,2,3,2,2,2,2,2],
-      [null,null,null,null,null,5,null,null,null,null,5,null,null,null,null,null,null,5,null,null,null,null,null,null,null,null,null,null,5,null,null],
+      [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
       [3,3,3,3,5,5,3,3,3,3,5,5,3,3,3,3,3,3,5,5,3,3,3,3,3,5,3,3,3,3,3],
       [null,null,null,null,2,null,null,null,null,1,null,null,null,null,null,2,null,null,null,null,null,null,null,1,null,null,null,null,null,null,1],
       [null,null,null,1,null,null,null,null,null,null,null,null,1,null,null,null,null,null,1,null,null,null,null,null,null,null,null,null,null,null],
@@ -101,7 +101,6 @@
     ];
 
     const grid = document.getElementById("grid");
-
     for (let r = 0; r < headers.length; r++) {
       for (let c = 0; c <= 31; c++) {
         const cell = document.createElement("div");
@@ -111,14 +110,12 @@
         if (r === 0) {
           cell.classList.add("header-1");
           cell.textContent = c === 0 ? headers[0] : days[c - 1];
-        }
-        else if (r === 1) {
+        } else if (r === 1) {
           cell.classList.add("header-2");
           cell.innerHTML = c === 0
             ? headers[1]
             : `<span class="${['土','日'].includes(weekdayRow[c-1])?'red':''}">${weekdayRow[c-1]}</span>`;
-        }
-        else if (r === 2) {
+        } else if (r === 2) {
           cell.classList.add("header-3");
           cell.textContent = c === 0 ? headers[2] : "";
           if (c > 0) {
@@ -128,8 +125,7 @@
               cell.textContent = states[idx];
             };
           }
-        }
-        else {
+        } else {
           const val = c === 0 ? headers[r] : data[r-3][c-1];
           cell.textContent = val ?? "";
           if (c > 0 && val != null) {
