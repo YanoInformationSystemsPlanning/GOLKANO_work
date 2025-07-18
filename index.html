@@ -86,14 +86,14 @@
   let cellRefs = [];
   let year = '';
   let month = '';
-  let highlightData = []; // ハイライト情報を保持
+  let highlightData = [];
 
   function parseCSVLine(line) {
     return line.split(',').map(s => s.trim());
   }
 
-  // ヘッダ（メンバ・年月）を読み込み、プルダウンを初期化
   function loadHeaderOnly() {
+    // プルダウンを input_data.txt の1行目から作成
     fetch(`${gasUrl}?action=read&folder=${folderId}&file=input_data.txt`)
       .then(res => res.text())
       .then(text => {
@@ -101,16 +101,10 @@
         const memberLine = parseCSVLine(lines[0]);
         const members = memberLine.slice(1);
         memberSelect.innerHTML = members.map(m => `<option value="${m}">${m}</option>`).join('');
-
-        const ymLine = parseCSVLine(lines[1]);
-        year = ymLine[1];
-        month = ymLine[2];
-        targetDateSpan.textContent = `対象：${year}年${month}月`;
       })
       .catch(err => alert("ヘッダ情報の読み込みに失敗しました。\n" + err.message));
   }
 
-  // グリッド表示
   function loadGridFromData(lines) {
     grid.innerHTML = '';
     cellRefs = [];
@@ -166,39 +160,42 @@
       cellRefs.push(row);
     }
     grid.appendChild(fragment);
-
-    // ハイライトを適用
     applyHighlight();
   }
 
-  // ハイライトを適用
   function applyHighlight() {
     for (let r = 3; r < highlightData.length; r++) {
-      const row = highlightData[r];
-      const cols = row.split(',');
-      for (let c = 1; c < cols.length; c++) {
-        if (cols[c] === 'B') {
-          cellRefs[r][c].classList.add("highlight-black");
-        } else if (cols[c] === 'G') {
-          cellRefs[r][c].classList.add("highlight-gray");
-        }
+      const row = highlightData[r].split(',');
+      for (let c = 1; c < row.length; c++) {
+        if (row[c] === 'B') cellRefs[r][c].classList.add("highlight-black");
+        else if (row[c] === 'G') cellRefs[r][c].classList.add("highlight-gray");
       }
     }
   }
 
-  // データマージ
   function mergeInputAndOutput(inputLines, outputLines) {
-    const merged = [...inputLines];
-    highlightData = [...outputLines]; // 反転色用に保持
+    const merged = [];
+    highlightData = [...outputLines];
 
-    if (outputLines.length > 2) {
-      // 3行目をoutputで置き換え
-      merged[2] = outputLines[2];
+    // 1～3行目は output を採用
+    merged[0] = outputLines[0] || '';
+    merged[1] = outputLines[1] || '';
+    merged[2] = outputLines[2] || '';
+
+    // 年月情報
+    const ym = parseCSVLine(outputLines[1]);
+    year = ym[1];
+    month = ym[2];
+    targetDateSpan.textContent = `対象：${year}年${month}月`;
+
+    // 4行目以降は input を採用
+    for (let r = 3; r < inputLines.length; r++) {
+      merged[r] = inputLines[r] || '';
     }
+
     return merged;
   }
 
-  // 選択された回答者のデータを読み込み
   function loadDataForMember(member) {
     const prefix = `output_data_${member}_`;
     fetch(`${gasUrl}?action=list&folder=${folderId}&prefix=${encodeURIComponent(prefix)}`)
@@ -209,7 +206,6 @@
           .then(inputText => {
             const inputLines = inputText.split('\n').filter(l => l.trim());
             if (data.result === "success" && data.files.length > 0) {
-              // 最新ファイル取得
               const latest = data.files.sort((a, b) => b.localeCompare(a))[0];
               fetch(`${gasUrl}?action=read&folder=${folderId}&file=${encodeURIComponent(latest)}`)
                 .then(res => res.text())
@@ -220,6 +216,11 @@
                   exportBtn.style.display = 'inline-block';
                 });
             } else {
+              // output_dataがない場合は input_data.txt を使用
+              const ym = parseCSVLine(inputLines[1]);
+              year = ym[1];
+              month = ym[2];
+              targetDateSpan.textContent = `対象：${year}年${month}月`;
               loadGridFromData(inputLines);
               exportBtn.style.display = 'inline-block';
             }
@@ -239,19 +240,17 @@
     for (let r = 0; r < rowCount; r++) {
       const row = [];
       for (let c = 0; c < colCount; c++) {
-        const cell = cellRefs[r][c];
         if (r < 3) {
-          row.push(cell.textContent);
+          row.push(cellRefs[r][c].textContent);
         } else {
-          if (cell.classList.contains("highlight-black")) row.push('B');
-          else if (cell.classList.contains("highlight-gray")) row.push('G');
+          if (cellRefs[r][c].classList.contains("highlight-black")) row.push('B');
+          else if (cellRefs[r][c].classList.contains("highlight-gray")) row.push('G');
           else row.push('');
         }
       }
       csv += row.join(',') + '\n';
     }
 
-    // 出力ファイル名
     const member = memberSelect.value.replace(/ /g, '_');
     const targetYm = `${year}${month}`;
     const now = new Date();
@@ -280,7 +279,6 @@
     });
   });
 
-  // 起動時はプルダウンのみ初期化
   window.onload = loadHeaderOnly;
 </script>
 </body>
