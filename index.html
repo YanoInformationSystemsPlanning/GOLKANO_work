@@ -49,24 +49,9 @@
       font-size: 14px;
       overflow: hidden;
     }
-    .header-1 {
-      position: sticky;
-      top: 0;
-      z-index: 5;
-      background: #eee;
-    }
-    .header-2 {
-      position: sticky;
-      top: 30px;
-      z-index: 5;
-      background: #eee;
-    }
-    .header-3 {
-      position: sticky;
-      top: 60px;
-      z-index: 5;
-      background: #eee;
-    }
+    .header-1 { position: sticky; top: 0; z-index: 5; background: #eee; }
+    .header-2 { position: sticky; top: 30px; z-index: 5; background: #eee; }
+    .header-3 { position: sticky; top: 60px; z-index: 5; background: #eee; }
     .fixed-col {
       position: sticky;
       left: 0;
@@ -76,20 +61,10 @@
     }
     .header-1.fixed-col,
     .header-2.fixed-col,
-    .header-3.fixed-col {
-      z-index: 6;
-    }
-    .highlight-black {
-      background: black !important;
-      color: white;
-    }
-    .highlight-gray {
-      background: gray !important;
-      color: white;
-    }
-    .red {
-      color: red;
-    }
+    .header-3.fixed-col { z-index: 6; }
+    .highlight-black { background: black !important; color: white; }
+    .highlight-gray { background: gray !important; color: white; }
+    .red { color: red; }
   </style>
 </head>
 <body>
@@ -133,7 +108,6 @@
     const colCount = 32;
 
     const fragment = document.createDocumentFragment();
-
     for (let r = 0; r < rowCount; r++) {
       const row = [];
       for (let c = 0; c < colCount; c++) {
@@ -175,7 +149,6 @@
             };
           }
         }
-
         fragment.appendChild(cell);
         row.push(cell);
       }
@@ -227,11 +200,37 @@
       csv += row.join(',') + '\n';
     }
 
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'output_data.txt';
-    a.click();
+    // ファイル名を構築
+    const member = memberSelect.value.replace(/ /g, '_');
+    const targetYm = `${year}${month}`;
+    const now = new Date();
+    const yyyymmdd = now.getFullYear().toString() +
+                     String(now.getMonth() + 1).padStart(2, '0') +
+                     String(now.getDate()).padStart(2, '0');
+    const hhmm = String(now.getHours()).padStart(2, '0') +
+                 String(now.getMinutes()).padStart(2, '0');
+    const timestamp = `${yyyymmdd}_${hhmm}`;
+    const filename = `output_data_${member}_${targetYm},${timestamp}.txt`;
+
+    const folderId = "1P9IpgCw1L_cvKjemIpg3ygtOAOUePWZh";
+    const postUrl = "https://script.google.com/macros/s/AKfycbx3Ir7q8b82MhnlCqwQnmAAJp2IaHY2f0UwBezEQLXHpa_Zo4M8lx__gt2dbLbojTlSuw/exec";
+
+    fetch(`${postUrl}?folder=${folderId}&filename=${encodeURIComponent(filename)}`, {
+      method: 'POST',
+      body: csv,
+      headers: { 'Content-Type': 'text/plain' }
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.result === 'success') {
+        alert(`Google Driveに保存しました！\nファイル名：${filename}`);
+      } else {
+        alert("保存エラー：" + data.message);
+      }
+    })
+    .catch(err => {
+      alert("通信エラー：" + err.message);
+    });
   });
 </script>
 </body>
