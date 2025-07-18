@@ -15,7 +15,7 @@
     }
     .grid {
       display: grid;
-      grid-template-columns: 100px repeat(31, 36px); /* ← 先頭列100px + 2列目以降36px */
+      grid-template-columns: 110px repeat(31, 36px); /* 先頭列広げた */
       grid-auto-rows: 30px;
       min-width: max-content;
     }
@@ -28,6 +28,7 @@
       background: white;
       position: relative;
       font-size: 14px;
+      overflow: hidden; /* 折り返し防止・見切れ回避 */
     }
     .header-1 {
       position: sticky;
@@ -52,7 +53,7 @@
       left: 0;
       z-index: 4;
       background: #f8f8f8;
-      text-indent: 2em; /* ← ノッチ対策：左に余白 */
+      padding-left: 2.5em; /* ノッチ対策：左に余白 */
     }
     .header-1.fixed-col,
     .header-2.fixed-col,
