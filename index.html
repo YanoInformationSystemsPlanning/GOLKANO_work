@@ -304,7 +304,7 @@
 
   function loadDataForMember(member) {
     loadingStatus.textContent = "処理中...";
-    const prefix = `output_data_${member}_`;
+    const prefix = `${member}_`;
     fetch(`${gasUrl}?action=list&folder=${folderId}&prefix=${encodeURIComponent(prefix)}`)
       .then(res => res.json())
       .then(data => {
@@ -388,9 +388,10 @@
     const yyyymmdd = now.getFullYear().toString() +
                      String(now.getMonth() + 1).padStart(2, '0') +
                      String(now.getDate()).padStart(2, '0');
-    const hhmm = String(now.getHours()).padStart(2, '0') +
-                 String(now.getMinutes()).padStart(2, '0');
-    const filename = `output_data_${member}_${targetYm}_${yyyymmdd}_${hhmm}作成.txt`;
+    const hhmmss = String(now.getHours()).padStart(2, '0') +
+                   String(now.getMinutes()).padStart(2, '0') +
+                   String(now.getSeconds()).padStart(2, '0');
+    const filename = `${member}_${targetYm}_${yyyymmdd}_${hhmmss}作成.txt`;
 
     fetch(`https://script.google.com/macros/s/AKfycbx3Ir7q8b82MhnlCqwQnmAAJp2IaHY2f0UwBezEQLXHpa_Zo4M8lx__gt2dbLbojTlSuw/exec?folder=${folderId}&filename=${encodeURIComponent(filename)}`, {
       method: 'POST',
