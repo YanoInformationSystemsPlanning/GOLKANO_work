@@ -121,13 +121,13 @@
         const val = data[r]?.[c] ?? '';
         if (c === 0) cell.classList.add("fixed-col");
 
-        if (r === 0) {
+        if (r === 2) {
           cell.classList.add("header-1");
           cell.textContent = c > 0 ? val : "日付";
-        } else if (r === 1) {
+        } else if (r === 3) {
           cell.classList.add("header-2");
           cell.innerHTML = c > 0 ? (['土','日'].includes(val) ? `<span class="red">${val}</span>` : val) : "曜日";
-        } else if (r === 2) {
+        } else if (r === 4) {
           cell.classList.add("header-3");
           if (c > 0) {
             cell.textContent = val;
@@ -164,7 +164,7 @@
   }
 
   function applyHighlight() {
-    for (let r = 3; r < highlightData.length; r++) {
+    for (let r = 5; r < highlightData.length; r++) {
       const row = highlightData[r].split(',');
       for (let c = 1; c < row.length; c++) {
         if (row[c] === 'B') cellRefs[r][c].classList.add("highlight-black");
@@ -174,23 +174,25 @@
   }
 
   function mergeInputAndOutput(inputLines, outputLines) {
-    const merged = [];
+    const merged = [...inputLines];
     highlightData = [...outputLines];
 
-    // 1～3行目は output を採用
-    merged[0] = outputLines[0] || '';
-    merged[1] = outputLines[1] || '';
-    merged[2] = outputLines[2] || '';
-
-    // 年月情報
+    // 1,2行目は output を採用（表示には使わないが年月情報用）
     const ym = parseCSVLine(outputLines[1]);
     year = ym[1];
     month = ym[2];
     targetDateSpan.textContent = `対象：${year}年${month}月`;
 
-    // 4行目以降は input を採用
-    for (let r = 3; r < inputLines.length; r++) {
-      merged[r] = inputLines[r] || '';
+    // 3,4行目は input_data の日付・曜日
+    merged[2] = inputLines[2];
+    merged[3] = inputLines[3];
+
+    // 5行目は output の対応可能情報
+    merged[4] = outputLines[4] || inputLines[4];
+
+    // 6行目以降は input_data のデータ
+    for (let r = 5; r < inputLines.length; r++) {
+      merged[r] = inputLines[r];
     }
 
     return merged;
@@ -216,7 +218,6 @@
                   exportBtn.style.display = 'inline-block';
                 });
             } else {
-              // output_dataがない場合は input_data.txt を使用
               const ym = parseCSVLine(inputLines[1]);
               year = ym[1];
               month = ym[2];
@@ -240,7 +241,7 @@
     for (let r = 0; r < rowCount; r++) {
       const row = [];
       for (let c = 0; c < colCount; c++) {
-        if (r < 3) {
+        if (r < 5) {
           row.push(cellRefs[r][c].textContent);
         } else {
           if (cellRefs[r][c].classList.contains("highlight-black")) row.push('B');
