@@ -29,7 +29,7 @@
   </style>
 </head>
 <body>
-  <div id="version-label">Ver.0 Rev.3</div>
+  <div id="version-label">Ver.0 Rev.4</div>
   <div id="purpose-area">
     <label for="purpose-input"><strong>目的：</strong></label>
     <input id="purpose-input" type="text" maxlength="17"
@@ -55,7 +55,8 @@
         const response = await fetch(url);
         if (!response.ok) throw new Error(`HTTPエラー ${response.status}`);
         const text = await response.text();
-        CANDIDATES = text.split(/\r?\n/).map(name => name.trim()).filter(name => name);
+        // カンマ区切りで候補者を分割
+        CANDIDATES = text.split(/[,、]/).map(name => name.trim()).filter(name => name);
         renderCandidates();
       } catch (e) {
         document.getElementById('select-area').innerHTML = `<span style="color:red;">データ取得エラー: ${e}</span>`;
