@@ -100,6 +100,12 @@
       margin-top: 10px;
       padding: 5px 10px;
       font-size: 14px;
+      margin-right: 5px;
+    }
+    #passwordError {
+      color: red;
+      display: none;
+      margin-top: 5px;
     }
   </style>
 </head>
@@ -121,7 +127,9 @@
     <div class="modal-content">
       <div id="passwordPrompt">パスワードを入力してください</div>
       <input type="text" id="passwordInput" maxlength="3">
+      <div id="passwordError">パスワードが違います</div>
       <button id="passwordOkBtn">OK</button>
+      <button id="passwordCancelBtn">キャンセル</button>
     </div>
   </div>
 
@@ -136,7 +144,9 @@
   const passwordModal = document.getElementById("passwordModal");
   const passwordPrompt = document.getElementById("passwordPrompt");
   const passwordInput = document.getElementById("passwordInput");
+  const passwordError = document.getElementById("passwordError");
   const passwordOkBtn = document.getElementById("passwordOkBtn");
+  const passwordCancelBtn = document.getElementById("passwordCancelBtn");
 
   const gasUrl = "https://script.google.com/macros/s/AKfycbzCYQRN6hg9n8OERx11vJslBCvy0VmgO-nzMIryNO1gUD4Q1wim5srxDPCKsggYsMzf5g/exec";
   const folderId = "1P9IpgCw1L_cvKjemIpg3ygtOAOUePWZh";
@@ -261,6 +271,7 @@
   function requestPasswordModal(message, callback) {
     passwordPrompt.textContent = message;
     passwordInput.value = '';
+    passwordError.style.display = 'none';
     passwordModal.style.display = 'flex';
     passwordCallback = callback;
     passwordInput.focus();
@@ -268,9 +279,32 @@
 
   passwordOkBtn.addEventListener('click', () => {
     const pw = passwordInput.value.trim();
+    if (pw === '') {
+      passwordError.textContent = 'パスワードを入力してください';
+      passwordError.style.display = 'block';
+      return;
+    }
     passwordModal.style.display = 'none';
     if (passwordCallback) passwordCallback(pw);
   });
+
+  passwordCancelBtn.addEventListener('click', () => {
+    passwordModal.style.display = 'none';
+    if (passwordCallback) passwordCallback(null);
+  });
+
+  function checkPasswordLoop(savedPassword, onSuccess) {
+    requestPasswordModal("既存データです。パスワードを入力してください。", pw => {
+      if (pw === null) return; // キャンセル
+      if (pw !== savedPassword) {
+        passwordError.textContent = 'パスワードが違います';
+        passwordError.style.display = 'block';
+        checkPasswordLoop(savedPassword, onSuccess); // 再入力
+      } else {
+        onSuccess(pw);
+      }
+    });
+  }
 
   function loadDataForMember(member) {
     loadingStatus.textContent = "処理中...";
@@ -283,7 +317,6 @@
           .then(inputText => {
             const inputLines = inputText.split('\n').filter(l => l.trim());
             if (data.result === "success" && data.files.length > 0) {
-              // 既存ファイルあり
               isNewFile = false;
               const latest = data.files.sort((a, b) => b.localeCompare(a))[0];
               fetch(`${gasUrl}?action=read&folder=${folderId}&file=${encodeURIComponent(latest)}`)
@@ -292,12 +325,7 @@
                   const outputLines = outputText.split('\n').filter(l => l.trim());
                   const header = parseCSVLine(outputLines[0]);
                   const savedPassword = header[2] || '';
-                  requestPasswordModal("既存データです。パスワードを入力してください。", pw => {
-                    if (!pw || pw !== savedPassword) {
-                      showMessage("パスワードが正しくありません。", 'error');
-                      loadingStatus.textContent = "";
-                      return;
-                    }
+                  checkPasswordLoop(savedPassword, pw => {
                     currentPassword = savedPassword;
                     const merged = mergeInputAndOutput(inputLines, outputLines);
                     loadGridFromData(merged);
@@ -306,10 +334,9 @@
                   });
                 });
             } else {
-              // 新規作成
               isNewFile = true;
               requestPasswordModal("新規作成です。3桁のパスワードを入力してください。", pw => {
-                if (!pw || pw.length !== 3) {
+                if (pw === null || pw.length !== 3) {
                   showMessage("3桁のパスワードを入力してください。", 'error');
                   loadingStatus.textContent = "";
                   return;
