@@ -29,7 +29,7 @@
   </style>
 </head>
 <body>
-  <div id="version-label">Ver.0 Rev.2</div>
+  <div id="version-label">Ver.0 Rev.3</div>
   <div id="purpose-area">
     <label for="purpose-input"><strong>目的：</strong></label>
     <input id="purpose-input" type="text" maxlength="17"
@@ -47,11 +47,13 @@
 
     // Google Apps Script 経由で候補者リストを取得
     async function fetchCandidates() {
+      const folderId = "1vY3sgy2XT6vSun_gq1O47EuOikCEeCOe"; // DriveフォルダID
+      const fileName = "input_data.txt";                     // 読み込むファイル名
+      const url = `https://script.google.com/macros/s/AKfycbzCYQRN6hg9n8OERx11vJslBCvy0VmgO-nzMIryNO1gUD4Q1wim5srxDPCKsggYsMzf5g/exec?action=read&folder=${folderId}&file=${fileName}`;
+
       try {
-        const response = await fetch(
-          'https://script.google.com/macros/s/AKfycbzCYQRN6hg9n8OERx11vJslBCvy0VmgO-nzMIryNO1gUD4Q1wim5srxDPCKsggYsMzf5g/exec'
-        );
-        if (!response.ok) throw new Error('候補者データの取得失敗');
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTPエラー ${response.status}`);
         const text = await response.text();
         CANDIDATES = text.split(/\r?\n/).map(name => name.trim()).filter(name => name);
         renderCandidates();
