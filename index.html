@@ -52,7 +52,9 @@
       left: 0;
       z-index: 4;
       background: #f8f8f8;
-      padding-left: 2.5em; /* ← ノッチ対策 */
+      min-width: 100px;          /* ← 横幅を少し広げる */
+      padding-left: 0.5em;       /* ← 余白を抑えめに */
+      text-indent: 2.0em;        /* ← ノッチ回避の見た目は維持 */
     }
     .header-1.fixed-col,
     .header-2.fixed-col,
