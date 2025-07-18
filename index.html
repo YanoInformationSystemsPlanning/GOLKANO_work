@@ -32,6 +32,10 @@
       font-size: 14px;
       cursor: pointer;
     }
+    .status {
+      font-weight: bold;
+      color: #007bff;
+    }
     .grid {
       display: grid;
       grid-template-columns: 110px repeat(31, 36px);
@@ -72,6 +76,7 @@
     <span>回答者：</span>
     <select id="memberSelect"></select>
     <span id="targetDate"></span>
+    <span id="loadingStatus" class="status"></span>
     <button id="exportBtn" style="display:none;">回答提出</button>
   </div>
   <div class="grid" id="grid"></div>
@@ -80,6 +85,7 @@
   const grid = document.getElementById("grid");
   const memberSelect = document.getElementById("memberSelect");
   const targetDateSpan = document.getElementById("targetDate");
+  const loadingStatus = document.getElementById("loadingStatus");
   const exportBtn = document.getElementById("exportBtn");
   const gasUrl = "https://script.google.com/macros/s/AKfycbzCYQRN6hg9n8OERx11vJslBCvy0VmgO-nzMIryNO1gUD4Q1wim5srxDPCKsggYsMzf5g/exec";
   const folderId = "1P9IpgCw1L_cvKjemIpg3ygtOAOUePWZh";
@@ -96,7 +102,6 @@
   }
 
   function loadHeaderOnly() {
-    // プルダウンは input_data.txt の1行目を使用
     fetch(`${gasUrl}?action=read&folder=${folderId}&file=input_data.txt`)
       .then(res => res.text())
       .then(text => {
@@ -124,13 +129,13 @@
         const val = data[r]?.[c] ?? '';
         if (c === 0) cell.classList.add("fixed-col");
 
-        if (r === 0) {  // 日付行
+        if (r === 0) {
           cell.classList.add("header-1");
           cell.textContent = c > 0 ? val : "日付";
-        } else if (r === 1) {  // 曜日行
+        } else if (r === 1) {
           cell.classList.add("header-2");
           cell.innerHTML = c > 0 ? (['土','日'].includes(val) ? `<span class="red">${val}</span>` : val) : "曜日";
-        } else if (r === 2) {  // 対応可能行
+        } else if (r === 2) {
           cell.classList.add("header-3");
           if (c > 0) {
             cell.textContent = val;
@@ -142,7 +147,7 @@
           } else {
             cell.textContent = "対応可能";
           }
-        } else {  // データ行
+        } else {
           cell.textContent = val;
           if (c > 0) {
             cell.onclick = () => {
@@ -180,16 +185,14 @@
     const merged = [];
     highlightData = [...outputLines];
 
-    // 年月
     const ym = parseCSVLine(outputLines[1]);
     year = ym[1];
     month = ym[2];
     targetDateSpan.textContent = `対象：${year}年${month}月`;
 
-    // 表用データ構成
-    merged[0] = inputLines[2]; // 日付
-    merged[1] = inputLines[3]; // 曜日
-    merged[2] = outputLines[4] || inputLines[4]; // 対応可能
+    merged[0] = inputLines[2];
+    merged[1] = inputLines[3];
+    merged[2] = outputLines[4] || inputLines[4];
 
     for (let r = 5; r < inputLines.length; r++) {
       merged.push(inputLines[r]);
@@ -211,6 +214,7 @@
   }
 
   function loadDataForMember(member) {
+    loadingStatus.textContent = "処理中...";
     const prefix = `output_data_${member}_`;
     fetch(`${gasUrl}?action=list&folder=${folderId}&prefix=${encodeURIComponent(prefix)}`)
       .then(res => res.json())
@@ -220,7 +224,6 @@
           .then(inputText => {
             const inputLines = inputText.split('\n').filter(l => l.trim());
             if (data.result === "success" && data.files.length > 0) {
-              // 既存ファイルあり
               isNewFile = false;
               const latest = data.files.sort((a, b) => b.localeCompare(a))[0];
               fetch(`${gasUrl}?action=read&folder=${folderId}&file=${encodeURIComponent(latest)}`)
@@ -230,18 +233,23 @@
                   const header = parseCSVLine(outputLines[0]);
                   const savedPassword = header[2] || '';
                   const enteredPw = requestPassword(false, savedPassword);
-                  if (enteredPw === null) return;
-
+                  if (enteredPw === null) {
+                    loadingStatus.textContent = "";
+                    return;
+                  }
                   currentPassword = savedPassword;
                   const merged = mergeInputAndOutput(inputLines, outputLines);
                   loadGridFromData(merged);
                   exportBtn.style.display = 'inline-block';
+                  loadingStatus.textContent = "";
                 });
             } else {
-              // 新規作成
               isNewFile = true;
               const pw = requestPassword(true);
-              if (pw === null) return;
+              if (pw === null) {
+                loadingStatus.textContent = "";
+                return;
+              }
               currentPassword = pw;
 
               const ym = parseCSVLine(inputLines[1]);
@@ -257,10 +265,14 @@
               ];
               loadGridFromData(merged);
               exportBtn.style.display = 'inline-block';
+              loadingStatus.textContent = "";
             }
           });
       })
-      .catch(err => alert("ファイルチェックに失敗しました。\n" + err.message));
+      .catch(err => {
+        alert("ファイルチェックに失敗しました。\n" + err.message);
+        loadingStatus.textContent = "";
+      });
   }
 
   memberSelect.addEventListener('change', () => {
