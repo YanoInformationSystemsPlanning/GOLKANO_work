@@ -23,19 +23,12 @@
       border-bottom: 1px solid #ccc;
       font-size: 14px;
     }
-    select {
-      padding: 2px;
-      font-size: 14px;
-    }
-    button {
-      padding: 5px 10px;
+    select, button {
+      padding: 2px 6px;
       font-size: 14px;
       cursor: pointer;
     }
-    .status {
-      font-weight: bold;
-      color: #007bff;
-    }
+    .status { font-weight: bold; color: #007bff; }
     .grid {
       display: grid;
       grid-template-columns: 110px repeat(31, 36px);
@@ -49,26 +42,65 @@
       white-space: nowrap;
       user-select: none;
       background: white;
-      position: relative;
       font-size: 14px;
       overflow: hidden;
     }
-    .header-1 { position: sticky; top: 0; z-index: 5; background: #eee; }
-    .header-2 { position: sticky; top: 30px; z-index: 5; background: #eee; }
-    .header-3 { position: sticky; top: 60px; z-index: 5; background: #eee; }
-    .fixed-col {
-      position: sticky;
-      left: 0;
-      z-index: 4;
-      background: #f8f8f8;
-      padding-left: 2.5em;
-    }
-    .header-1.fixed-col,
-    .header-2.fixed-col,
-    .header-3.fixed-col { z-index: 6; }
+    .header-1 { position: sticky; top: 0; background: #eee; z-index: 5; }
+    .header-2 { position: sticky; top: 30px; background: #eee; z-index: 5; }
+    .header-3 { position: sticky; top: 60px; background: #eee; z-index: 5; }
+    .fixed-col { position: sticky; left: 0; background: #f8f8f8; padding-left: 2.5em; z-index: 4; }
+    .header-1.fixed-col, .header-2.fixed-col, .header-3.fixed-col { z-index: 6; }
     .highlight-black { background: black !important; color: white; }
     .highlight-gray { background: gray !important; color: white; }
     .red { color: red; }
+
+    /* メッセージボックス */
+    #messageBox {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: #333;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 9999;
+      pointer-events: none;
+    }
+    #messageBox.show { opacity: 1; }
+    #messageBox.success { background: #28a745; }
+    #messageBox.error { background: #dc3545; }
+    #messageBox.info { background: #007bff; }
+
+    /* パスワードモーダル */
+    #passwordModal {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+    }
+    #passwordModal .modal-content {
+      background: #fff;
+      padding: 20px;
+      border-radius: 5px;
+      text-align: center;
+      width: 250px;
+    }
+    #passwordModal input {
+      width: 100%;
+      padding: 5px;
+      margin-top: 10px;
+      font-size: 16px;
+    }
+    #passwordModal button {
+      margin-top: 10px;
+      padding: 5px 10px;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
@@ -81,12 +113,31 @@
   </div>
   <div class="grid" id="grid"></div>
 
+  <!-- メッセージ表示 -->
+  <div id="messageBox"></div>
+
+  <!-- パスワードモーダル -->
+  <div id="passwordModal">
+    <div class="modal-content">
+      <div id="passwordPrompt">パスワードを入力してください</div>
+      <input type="text" id="passwordInput" maxlength="3">
+      <button id="passwordOkBtn">OK</button>
+    </div>
+  </div>
+
 <script>
   const grid = document.getElementById("grid");
   const memberSelect = document.getElementById("memberSelect");
   const targetDateSpan = document.getElementById("targetDate");
   const loadingStatus = document.getElementById("loadingStatus");
   const exportBtn = document.getElementById("exportBtn");
+  const messageBox = document.getElementById("messageBox");
+
+  const passwordModal = document.getElementById("passwordModal");
+  const passwordPrompt = document.getElementById("passwordPrompt");
+  const passwordInput = document.getElementById("passwordInput");
+  const passwordOkBtn = document.getElementById("passwordOkBtn");
+
   const gasUrl = "https://script.google.com/macros/s/AKfycbzCYQRN6hg9n8OERx11vJslBCvy0VmgO-nzMIryNO1gUD4Q1wim5srxDPCKsggYsMzf5g/exec";
   const folderId = "1P9IpgCw1L_cvKjemIpg3ygtOAOUePWZh";
 
@@ -96,6 +147,13 @@
   let highlightData = [];
   let currentPassword = '';
   let isNewFile = false;
+  let passwordCallback = null;
+
+  function showMessage(msg, type = 'info') {
+    messageBox.className = `show ${type}`;
+    messageBox.textContent = msg;
+    setTimeout(() => messageBox.classList.remove('show'), 3000);
+  }
 
   function parseCSVLine(line) {
     return line.split(',').map(s => s.trim());
@@ -110,7 +168,7 @@
         const members = memberLine.slice(1);
         memberSelect.innerHTML = members.map(m => `<option value="${m}">${m}</option>`).join('');
       })
-      .catch(err => alert("ヘッダ情報の読み込みに失敗しました。\n" + err.message));
+      .catch(err => showMessage("ヘッダ情報の読み込みに失敗しました。\n" + err.message, 'error'));
   }
 
   function loadGridFromData(lines) {
@@ -200,18 +258,19 @@
     return merged;
   }
 
-  function requestPassword(isNew, correctPassword = '') {
-    let pw = prompt(isNew ? "新規作成です。3桁のパスワードを入力してください。" : "既存データです。パスワードを入力してください。");
-    if (!pw || pw.length !== 3) {
-      alert("3桁のパスワードを入力してください。");
-      return null;
-    }
-    if (!isNew && pw !== correctPassword) {
-      alert("パスワードが正しくありません。");
-      return null;
-    }
-    return pw;
+  function requestPasswordModal(message, callback) {
+    passwordPrompt.textContent = message;
+    passwordInput.value = '';
+    passwordModal.style.display = 'flex';
+    passwordCallback = callback;
+    passwordInput.focus();
   }
+
+  passwordOkBtn.addEventListener('click', () => {
+    const pw = passwordInput.value.trim();
+    passwordModal.style.display = 'none';
+    if (passwordCallback) passwordCallback(pw);
+  });
 
   function loadDataForMember(member) {
     loadingStatus.textContent = "処理中...";
@@ -224,6 +283,7 @@
           .then(inputText => {
             const inputLines = inputText.split('\n').filter(l => l.trim());
             if (data.result === "success" && data.files.length > 0) {
+              // 既存ファイルあり
               isNewFile = false;
               const latest = data.files.sort((a, b) => b.localeCompare(a))[0];
               fetch(`${gasUrl}?action=read&folder=${folderId}&file=${encodeURIComponent(latest)}`)
@@ -232,45 +292,49 @@
                   const outputLines = outputText.split('\n').filter(l => l.trim());
                   const header = parseCSVLine(outputLines[0]);
                   const savedPassword = header[2] || '';
-                  const enteredPw = requestPassword(false, savedPassword);
-                  if (enteredPw === null) {
+                  requestPasswordModal("既存データです。パスワードを入力してください。", pw => {
+                    if (!pw || pw !== savedPassword) {
+                      showMessage("パスワードが正しくありません。", 'error');
+                      loadingStatus.textContent = "";
+                      return;
+                    }
+                    currentPassword = savedPassword;
+                    const merged = mergeInputAndOutput(inputLines, outputLines);
+                    loadGridFromData(merged);
+                    exportBtn.style.display = 'inline-block';
                     loadingStatus.textContent = "";
-                    return;
-                  }
-                  currentPassword = savedPassword;
-                  const merged = mergeInputAndOutput(inputLines, outputLines);
-                  loadGridFromData(merged);
-                  exportBtn.style.display = 'inline-block';
-                  loadingStatus.textContent = "";
+                  });
                 });
             } else {
+              // 新規作成
               isNewFile = true;
-              const pw = requestPassword(true);
-              if (pw === null) {
+              requestPasswordModal("新規作成です。3桁のパスワードを入力してください。", pw => {
+                if (!pw || pw.length !== 3) {
+                  showMessage("3桁のパスワードを入力してください。", 'error');
+                  loadingStatus.textContent = "";
+                  return;
+                }
+                currentPassword = pw;
+                const ym = parseCSVLine(inputLines[1]);
+                year = ym[1];
+                month = ym[2];
+                targetDateSpan.textContent = `対象：${year}年${month}月`;
+
+                const merged = [
+                  inputLines[2],
+                  inputLines[3],
+                  inputLines[4],
+                  ...inputLines.slice(5)
+                ];
+                loadGridFromData(merged);
+                exportBtn.style.display = 'inline-block';
                 loadingStatus.textContent = "";
-                return;
-              }
-              currentPassword = pw;
-
-              const ym = parseCSVLine(inputLines[1]);
-              year = ym[1];
-              month = ym[2];
-              targetDateSpan.textContent = `対象：${year}年${month}月`;
-
-              const merged = [
-                inputLines[2],
-                inputLines[3],
-                inputLines[4],
-                ...inputLines.slice(5)
-              ];
-              loadGridFromData(merged);
-              exportBtn.style.display = 'inline-block';
-              loadingStatus.textContent = "";
+              });
             }
           });
       })
       .catch(err => {
-        alert("ファイルチェックに失敗しました。\n" + err.message);
+        showMessage("ファイルチェックに失敗しました。\n" + err.message, 'error');
         loadingStatus.textContent = "";
       });
   }
@@ -315,13 +379,13 @@
     .then(res => res.json())
     .then(data => {
       if (data.result === 'success') {
-        alert(`Google Driveに保存しました！\nファイル名：${filename}`);
+        showMessage(`Google Driveに保存しました！\nファイル名：${filename}`, 'success');
       } else {
-        alert("保存エラー：" + data.message);
+        showMessage("保存エラー：" + data.message, 'error');
       }
     })
     .catch(err => {
-      alert("通信エラー：" + err.message);
+      showMessage("通信エラー：" + err.message, 'error');
     });
   });
 
