@@ -72,7 +72,7 @@
     <span>回答者：</span>
     <select id="memberSelect"></select>
     <span id="targetDate"></span>
-    <button id="exportBtn">回答提出</button>
+    <button id="exportBtn" style="display:none;">回答提出</button>
   </div>
   <div class="grid" id="grid"></div>
 
@@ -81,6 +81,8 @@
   const memberSelect = document.getElementById("memberSelect");
   const targetDateSpan = document.getElementById("targetDate");
   const exportBtn = document.getElementById("exportBtn");
+  const gasUrl = "https://script.google.com/macros/s/AKfycbzCYQRN6hg9n8OERx11vJslBCvy0VmgO-nzMIryNO1gUD4Q1wim5srxDPCKsggYsMzf5g/exec";
+  const folderId = "1P9IpgCw1L_cvKjemIpg3ygtOAOUePWZh";
   let cellRefs = [];
   let year = '';
   let month = '';
@@ -89,15 +91,22 @@
     return line.split(',').map(s => s.trim());
   }
 
-  function loadHeaderData(lines) {
-    const memberLine = parseCSVLine(lines[0]);
-    const members = memberLine.slice(1);
-    memberSelect.innerHTML = members.map(m => `<option value="${m}">${m}</option>`).join('');
+  // ヘッダ（メンバ・年月）を読み込み、プルダウンを初期化
+  function loadHeaderOnly() {
+    fetch(`${gasUrl}?action=read&folder=${folderId}&file=input_data.txt`)
+      .then(res => res.text())
+      .then(text => {
+        const lines = text.split('\n').filter(l => l.trim());
+        const memberLine = parseCSVLine(lines[0]);
+        const members = memberLine.slice(1);
+        memberSelect.innerHTML = members.map(m => `<option value="${m}">${m}</option>`).join('');
 
-    const ymLine = parseCSVLine(lines[1]);
-    year = ymLine[1];
-    month = ymLine[2];
-    targetDateSpan.textContent = `対象：${year}年${month}月`;
+        const ymLine = parseCSVLine(lines[1]);
+        year = ymLine[1];
+        month = ymLine[2];
+        targetDateSpan.textContent = `対象：${year}年${month}月`;
+      })
+      .catch(err => alert("ヘッダ情報の読み込みに失敗しました。\n" + err.message));
   }
 
   function loadGridFromData(lines) {
@@ -106,8 +115,8 @@
     const data = lines.map(parseCSVLine);
     const rowCount = data.length;
     const colCount = 32;
-
     const fragment = document.createDocumentFragment();
+
     for (let r = 0; r < rowCount; r++) {
       const row = [];
       for (let c = 0; c < colCount; c++) {
@@ -157,25 +166,45 @@
     grid.appendChild(fragment);
   }
 
-  window.onload = () => {
-    const folderId = "1P9IpgCw1L_cvKjemIpg3ygtOAOUePWZh";
-    const fileName = "input_data.txt";
-    const gasUrl = "https://script.google.com/macros/s/AKfycbz8vxsp0D_VlmVwPQurpLFzDlARQTNCHAc_DI0M5u1rJysL1nNeiHO5b8n7VnsW8KtwjA/exec";
+  // 選択された回答者のデータを読み込み
+  function loadDataForMember(member) {
+    const prefix = `output_data_${member}_`;
+    fetch(`${gasUrl}?action=list&folder=${folderId}&prefix=${encodeURIComponent(prefix)}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.result === "success" && data.files.length > 0) {
+          // ファイル名のyyyymmdd_hhmm作成部分でソート
+          const sorted = data.files.sort((a, b) => {
+            const getTimestamp = name => name.match(/_(\d{8}_\d{4})作成/);
+            const aTime = getTimestamp(a);
+            const bTime = getTimestamp(b);
+            return (bTime ? bTime[1] : '') > (aTime ? aTime[1] : '') ? 1 : -1;
+          });
+          const latest = sorted[0];
+          fetch(`${gasUrl}?action=read&folder=${folderId}&file=${encodeURIComponent(latest)}`)
+            .then(res => res.text())
+            .then(text => {
+              const lines = text.split('\n').filter(l => l.trim());
+              loadGridFromData(lines.slice(2)); // データ部を描画
+              exportBtn.style.display = 'inline-block';
+            });
+        } else {
+          // output_data_がない → input_data.txtを使用
+          fetch(`${gasUrl}?action=read&folder=${folderId}&file=input_data.txt`)
+            .then(res => res.text())
+            .then(text => {
+              const lines = text.split('\n').filter(l => l.trim());
+              loadGridFromData(lines.slice(2));
+              exportBtn.style.display = 'inline-block';
+            });
+        }
+      })
+      .catch(err => alert("ファイルチェックに失敗しました。\n" + err.message));
+  }
 
-    fetch(`${gasUrl}?folder=${folderId}&file=${fileName}`)
-      .then(res => {
-        if (!res.ok) throw new Error("GASからの取得に失敗しました");
-        return res.text();
-      })
-      .then(text => {
-        const lines = text.split('\n').filter(l => l.trim());
-        loadHeaderData(lines);
-        loadGridFromData(lines.slice(2));
-      })
-      .catch(err => {
-        alert("GoogleDriveからの読み込みに失敗しました。\n" + err.message);
-      });
-  };
+  memberSelect.addEventListener('change', () => {
+    loadDataForMember(memberSelect.value);
+  });
 
   exportBtn.addEventListener('click', () => {
     let csv = `回答者,${memberSelect.value}\n年月,${year},${month}\n`;
@@ -200,7 +229,7 @@
       csv += row.join(',') + '\n';
     }
 
-    // ファイル名を構築
+    // 出力ファイル名
     const member = memberSelect.value.replace(/ /g, '_');
     const targetYm = `${year}${month}`;
     const now = new Date();
@@ -209,13 +238,9 @@
                      String(now.getDate()).padStart(2, '0');
     const hhmm = String(now.getHours()).padStart(2, '0') +
                  String(now.getMinutes()).padStart(2, '0');
-    const timestamp = `${yyyymmdd}_${hhmm}`;
-    const filename = `output_data_${member}_${targetYm},${timestamp}.txt`;
+    const filename = `output_data_${member}_${targetYm}_${yyyymmdd}_${hhmm}作成.txt`;
 
-    const folderId = "1P9IpgCw1L_cvKjemIpg3ygtOAOUePWZh";
-    const postUrl = "https://script.google.com/macros/s/AKfycbx3Ir7q8b82MhnlCqwQnmAAJp2IaHY2f0UwBezEQLXHpa_Zo4M8lx__gt2dbLbojTlSuw/exec";
-
-    fetch(`${postUrl}?folder=${folderId}&filename=${encodeURIComponent(filename)}`, {
+    fetch(`https://script.google.com/macros/s/AKfycbx3Ir7q8b82MhnlCqwQnmAAJp2IaHY2f0UwBezEQLXHpa_Zo4M8lx__gt2dbLbojTlSuw/exec?folder=${folderId}&filename=${encodeURIComponent(filename)}`, {
       method: 'POST',
       body: csv,
       headers: { 'Content-Type': 'text/plain' }
@@ -232,6 +257,9 @@
       alert("通信エラー：" + err.message);
     });
   });
+
+  // 起動時はプルダウンのみ初期化
+  window.onload = loadHeaderOnly;
 </script>
 </body>
 </html>
