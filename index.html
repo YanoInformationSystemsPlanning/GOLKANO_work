@@ -114,7 +114,6 @@
     <span id="targetDate"></span>
     <span id="loadingStatus" class="status"></span>
     <button id="exportBtn" style="display:none;">回答提出</button>
-    <button id="exitBtn" style="display:none;">プログラム終了</button>
   </div>
   <div class="grid" id="grid"></div>
 
@@ -136,7 +135,6 @@
   const targetDateSpan = document.getElementById("targetDate");
   const loadingStatus = document.getElementById("loadingStatus");
   const exportBtn = document.getElementById("exportBtn");
-  const exitBtn = document.getElementById("exitBtn");
   const messageBox = document.getElementById("messageBox");
 
   const passwordModal = document.getElementById("passwordModal");
@@ -329,7 +327,6 @@
                     const merged = mergeInputAndOutput(inputLines, outputLines);
                     loadGridFromData(merged);
                     exportBtn.style.display = 'inline-block';
-                    exitBtn.style.display = 'inline-block';
                     loadingStatus.textContent = "";
                   }, savedPassword);
                 });
@@ -351,7 +348,6 @@
                 ];
                 loadGridFromData(merged);
                 exportBtn.style.display = 'inline-block';
-                exitBtn.style.display = 'inline-block';
                 loadingStatus.textContent = "";
               });
             }
@@ -414,15 +410,6 @@
       showMessage("通信エラー：" + err.message, 'error');
       loadingStatus.textContent = "";
     });
-  });
-
-  exitBtn.addEventListener('click', () => {
-    if (confirm("プログラムを終了しますか？")) {
-      window.close();
-      setTimeout(() => {
-        if (!window.closed) location.href = 'about:blank';
-      }, 200);
-    }
   });
 
   window.onload = loadHeaderOnly;
