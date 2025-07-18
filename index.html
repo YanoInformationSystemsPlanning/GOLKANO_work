@@ -16,7 +16,7 @@
 
     .grid {
       display: grid;
-      grid-template-columns: 110px repeat(31, 36px); /* 1列目:110px、以降:36px */
+      grid-template-columns: 110px repeat(31, 36px); /* 先頭列 110px固定 */
       grid-auto-rows: 30px;
       min-width: max-content;
     }
@@ -30,7 +30,7 @@
       background: white;
       position: relative;
       font-size: 14px;
-      overflow: hidden; /* 折り返し防止 */
+      overflow: hidden;
     }
 
     .header-1 {
@@ -59,20 +59,22 @@
       left: 0;
       z-index: 4;
       background: #f8f8f8;
-      padding-left: 0; /* 通常は余白なし */
-    }
-
-    /* iPhoneのみノッチ対策を適用 */
-    @media screen and (max-device-width: 1024px) and (-webkit-touch-callout: none) {
-      .fixed-col {
-        padding-left: 2.5em;
-      }
+      padding-left: 0; /* ← 基本は余白なし */
     }
 
     .header-1.fixed-col,
     .header-2.fixed-col,
     .header-3.fixed-col {
       z-index: 6;
+    }
+
+    /* ✅ iPhoneだけにノッチ対策を適用 */
+    @supports (-webkit-touch-callout: none) {
+      @media screen and (max-device-width: 820px) {
+        .fixed-col {
+          padding-left: 2.5em;
+        }
+      }
     }
 
     .highlight-black {
