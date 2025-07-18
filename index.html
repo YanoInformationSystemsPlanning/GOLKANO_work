@@ -28,7 +28,7 @@
       font-size: 14px;
       cursor: pointer;
     }
-    .status { font-weight: bold; color: #007bff; }
+    .status { font-weight: bold; color: red; }
     .grid {
       display: grid;
       grid-template-columns: 110px repeat(31, 36px);
@@ -344,6 +344,7 @@
   });
 
   exportBtn.addEventListener('click', () => {
+    loadingStatus.textContent = "処理中...";
     let csv = `回答者,${memberSelect.value},${currentPassword}\n年月,${year},${month}\n`;
     const rowCount = cellRefs.length;
     const colCount = 32;
@@ -383,9 +384,11 @@
       } else {
         showMessage("保存エラー：" + data.message, 'error');
       }
+      loadingStatus.textContent = "";
     })
     .catch(err => {
       showMessage("通信エラー：" + err.message, 'error');
+      loadingStatus.textContent = "";
     });
   });
 
