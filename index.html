@@ -214,7 +214,8 @@
           }
         } else {
           cell.textContent = val;
-          if (c > 0) {
+          // 空白でないセルのみ反転可能
+          if (c > 0 && val !== "") {
             cell.onclick = () => {
               if (cell.classList.contains("highlight-black")) {
                 cell.classList.remove("highlight-black");
