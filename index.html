@@ -15,7 +15,7 @@
     }
     .grid {
       display: grid;
-      grid-template-columns: 80px repeat(31, 36px); /* 2列目以降は3文字分 */
+      grid-template-columns: 100px repeat(31, 36px); /* ← 先頭列100px + 2列目以降36px */
       grid-auto-rows: 30px;
       min-width: max-content;
     }
@@ -52,9 +52,7 @@
       left: 0;
       z-index: 4;
       background: #f8f8f8;
-      min-width: 100px;          /* ← 横幅を少し広げる */
-      padding-left: 0.5em;       /* ← 余白を抑えめに */
-      text-indent: 2.0em;        /* ← ノッチ回避の見た目は維持 */
+      text-indent: 2em; /* ← ノッチ対策：左に余白 */
     }
     .header-1.fixed-col,
     .header-2.fixed-col,
