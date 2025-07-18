@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>Excel風スケジュール表</title>
+  <title>シフト調整ツール</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Cache-Control" content="no-store" />
   <style>
@@ -321,7 +321,7 @@
                   const outputLines = outputText.split('\n').filter(l => l.trim());
                   const header = parseCSVLine(outputLines[0]);
                   const savedPassword = header[2] || '';
-                  openPasswordModal("既存データです。パスワードを入力してください。", pw => {
+                  openPasswordModal("回答済です。内容の確認 or 修正にはパスワードを入力してください。", pw => {
                     if (pw === null) { loadingStatus.textContent = ""; return; }
                     currentPassword = savedPassword;
                     const merged = mergeInputAndOutput(inputLines, outputLines);
@@ -400,7 +400,7 @@
     .then(res => res.json())
     .then(data => {
       if (data.result === 'success') {
-        showMessage(`Google Driveに保存しました！\nファイル名：${filename}`, 'success');
+        showMessage(`回答内容を保存しました！\nファイル名：${filename}`, 'success');
       } else {
         showMessage("保存エラー：" + data.message, 'error');
       }
