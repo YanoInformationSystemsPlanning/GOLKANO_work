@@ -83,10 +83,13 @@
   const exportBtn = document.getElementById("exportBtn");
   const gasUrl = "https://script.google.com/macros/s/AKfycbzCYQRN6hg9n8OERx11vJslBCvy0VmgO-nzMIryNO1gUD4Q1wim5srxDPCKsggYsMzf5g/exec";
   const folderId = "1P9IpgCw1L_cvKjemIpg3ygtOAOUePWZh";
+
   let cellRefs = [];
   let year = '';
   let month = '';
   let highlightData = [];
+  let currentPassword = '';
+  let isNewFile = false;
 
   function parseCSVLine(line) {
     return line.split(',').map(s => s.trim());
@@ -194,6 +197,19 @@
     return merged;
   }
 
+  function requestPassword(isNew, correctPassword = '') {
+    let pw = prompt(isNew ? "新規作成です。3桁のパスワードを入力してください。" : "既存データです。パスワードを入力してください。");
+    if (!pw || pw.length !== 3) {
+      alert("3桁のパスワードを入力してください。");
+      return null;
+    }
+    if (!isNew && pw !== correctPassword) {
+      alert("パスワードが正しくありません。");
+      return null;
+    }
+    return pw;
+  }
+
   function loadDataForMember(member) {
     const prefix = `output_data_${member}_`;
     fetch(`${gasUrl}?action=list&folder=${folderId}&prefix=${encodeURIComponent(prefix)}`)
@@ -204,20 +220,35 @@
           .then(inputText => {
             const inputLines = inputText.split('\n').filter(l => l.trim());
             if (data.result === "success" && data.files.length > 0) {
+              // 既存ファイルあり
+              isNewFile = false;
               const latest = data.files.sort((a, b) => b.localeCompare(a))[0];
               fetch(`${gasUrl}?action=read&folder=${folderId}&file=${encodeURIComponent(latest)}`)
                 .then(res => res.text())
                 .then(outputText => {
                   const outputLines = outputText.split('\n').filter(l => l.trim());
+                  const header = parseCSVLine(outputLines[0]);
+                  const savedPassword = header[2] || '';
+                  const enteredPw = requestPassword(false, savedPassword);
+                  if (enteredPw === null) return;
+
+                  currentPassword = savedPassword;
                   const merged = mergeInputAndOutput(inputLines, outputLines);
                   loadGridFromData(merged);
                   exportBtn.style.display = 'inline-block';
                 });
             } else {
+              // 新規作成
+              isNewFile = true;
+              const pw = requestPassword(true);
+              if (pw === null) return;
+              currentPassword = pw;
+
               const ym = parseCSVLine(inputLines[1]);
               year = ym[1];
               month = ym[2];
               targetDateSpan.textContent = `対象：${year}年${month}月`;
+
               const merged = [
                 inputLines[2],
                 inputLines[3],
@@ -237,7 +268,7 @@
   });
 
   exportBtn.addEventListener('click', () => {
-    let csv = `回答者,${memberSelect.value}\n年月,${year},${month}\n`;
+    let csv = `回答者,${memberSelect.value},${currentPassword}\n年月,${year},${month}\n`;
     const rowCount = cellRefs.length;
     const colCount = 32;
     for (let r = 0; r < rowCount; r++) {
