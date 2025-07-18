@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Excel風スケジュール表</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-store" />
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: sans-serif;
+      width: 100vw;
+      height: 100vh;
+      overflow: auto;
+    }
+    .header-bar {
+      display: flex;
+      align-items: center;
+      gap: 1em;
+      padding: 5px 10px;
+      background: #f0f0f0;
+      border-bottom: 1px solid #ccc;
+      font-size: 14px;
+    }
+    select {
+      padding: 2px;
+      font-size: 14px;
+    }
+    button {
+      padding: 5px 10px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 110px repeat(31, 36px);
+      grid-auto-rows: 30px;
+      min-width: max-content;
+    }
+    .cell {
+      border: 1px solid #ccc;
+      text-align: center;
+      line-height: 30px;
+      white-space: nowrap;
+      user-select: none;
+      background: white;
+      position: relative;
+      font-size: 14px;
+      overflow: hidden;
+    }
+    .header-1 {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      background: #eee;
+    }
+    .header-2 {
+      position: sticky;
+      top: 30px;
+      z-index: 5;
+      background: #eee;
+    }
+    .header-3 {
+      position: sticky;
+      top: 60px;
+      z-index: 5;
+      background: #eee;
+    }
+    .fixed-col {
+      position: sticky;
+      left: 0;
+      z-index: 4;
+      background: #f8f8f8;
+      padding-left: 2.5em;
+    }
+    .header-1.fixed-col,
+    .header-2.fixed-col,
+    .header-3.fixed-col {
+      z-index: 6;
+    }
+    .highlight-black {
+      background: black !important;
+      color: white;
+    }
+    .highlight-gray {
+      background: gray !important;
+      color: white;
+    }
+    .red {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <div class="header-bar">
+    <span>回答者：</span>
+    <select id="memberSelect"></select>
+    <span id="targetDate"></span>
+    <button id="exportBtn">回答提出</button>
+  </div>
+  <div class="grid" id="grid"></div>
+
+<script>
+  const grid = document.getElementById("grid");
+  const memberSelect = document.getElementById("memberSelect");
+  const targetDateSpan = document.getElementById("targetDate");
+  const exportBtn = document.getElementById("exportBtn");
+  let cellRefs = [];
+  let year = '';
+  let month = '';
+
+  function parseCSVLine(line) {
+    return line.split(',').map(s => s.trim());
+  }
+
+  function loadHeaderData(lines) {
+    const memberLine = parseCSVLine(lines[0]);
+    const members = memberLine.slice(1);
+    memberSelect.innerHTML = members.map(m => `<option value="${m}">${m}</option>`).join('');
+
+    const ymLine = parseCSVLine(lines[1]);
+    year = ymLine[1];
+    month = ymLine[2];
+    targetDateSpan.textContent = `対象：${year}年${month}月`;
+  }
+
+  function loadGridFromData(lines) {
+    grid.innerHTML = '';
+    cellRefs = [];
+    const data = lines.map(parseCSVLine);
+    const rowCount = data.length;
+    const colCount = 32;
+
+    const fragment = document.createDocumentFragment();
+
+    for (let r = 0; r < rowCount; r++) {
+      const row = [];
+      for (let c = 0; c < colCount; c++) {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        const val = data[r]?.[c] ?? '';
+        if (c === 0) cell.classList.add("fixed-col");
+
+        if (r === 0) {
+          cell.classList.add("header-1");
+          cell.textContent = c > 0 ? val : "日付";
+        } else if (r === 1) {
+          cell.classList.add("header-2");
+          cell.innerHTML = c > 0 ? (['土','日'].includes(val) ? `<span class="red">${val}</span>` : val) : "曜日";
+        } else if (r === 2) {
+          cell.classList.add("header-3");
+          if (c > 0) {
+            cell.textContent = "";
+            cell.onclick = () => {
+              const states = ["●", "▲", ""];
+              const idx = states.indexOf(cell.textContent);
+              cell.textContent = states[(idx + 1) % 3];
+            };
+          } else {
+            cell.textContent = "対応可能";
+          }
+        } else {
+          cell.textContent = val;
+          if (c > 0 && val !== "") {
+            cell.onclick = () => {
+              if (cell.classList.contains("highlight-black")) {
+                cell.classList.remove("highlight-black");
+                cell.classList.add("highlight-gray");
+              } else if (cell.classList.contains("highlight-gray")) {
+                cell.classList.remove("highlight-gray");
+              } else {
+                cell.classList.add("highlight-black");
+              }
+            };
+          }
+        }
+
+        fragment.appendChild(cell);
+        row.push(cell);
+      }
+      cellRefs.push(row);
+    }
+    grid.appendChild(fragment);
+  }
+
+  window.onload = () => {
+    const folderId = "1P9IpgCw1L_cvKjemIpg3ygtOAOUePWZh";
+    const fileName = "input_data.txt";
+    const gasUrl = "https://script.google.com/macros/s/AKfycbz8vxsp0D_VlmVwPQurpLFzDlARQTNCHAc_DI0M5u1rJysL1nNeiHO5b8n7VnsW8KtwjA/exec";
+
+    fetch(`${gasUrl}?folder=${folderId}&file=${fileName}`)
+      .then(res => {
+        if (!res.ok) throw new Error("GASからの取得に失敗しました");
+        return res.text();
+      })
+      .then(text => {
+        const lines = text.split('\n').filter(l => l.trim());
+        loadHeaderData(lines);
+        loadGridFromData(lines.slice(2));
+      })
+      .catch(err => {
+        alert("GoogleDriveからの読み込みに失敗しました。\n" + err.message);
+      });
+  };
+
+  exportBtn.addEventListener('click', () => {
+    let csv = `回答者,${memberSelect.value}\n年月,${year},${month}\n`;
+    const rowCount = cellRefs.length;
+    const colCount = 32;
+    for (let r = 0; r < rowCount; r++) {
+      const row = [];
+      for (let c = 0; c < colCount; c++) {
+        const cell = cellRefs[r][c];
+        if (r < 3) {
+          row.push(cell.textContent);
+        } else {
+          if (c > 0) {
+            if (cell.classList.contains("highlight-black")) row.push('B');
+            else if (cell.classList.contains("highlight-gray")) row.push('G');
+            else row.push('');
+          } else {
+            row.push(cell.textContent);
+          }
+        }
+      }
+      csv += row.join(',') + '\n';
+    }
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'output_data.txt';
+    a.click();
+  });
+</script>
+</body>
+</html>
