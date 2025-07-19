@@ -8,7 +8,16 @@
     body { font-family: sans-serif; text-align: center; margin: 1em; }
     #version-label { position: absolute; top: 0.2em; left: 0.2em; font-size: 0.8em; color: #555; }
     h2 { margin-bottom: 0.5em; }
-    #purpose-area { margin-top: 1.5em; margin-bottom: 0.5em; } /* バージョン表示行と同じ高さ分の余白 */
+    #purpose-area { margin-top: 1.2em; margin-bottom: 0.5em; } /* Ver行の高さ分の余白 */
+    #purpose-input {
+      width: 17em;
+      font-size: 1.0em;
+      height: 2.2em; /* 高さ1割増し */
+      text-align: left; /* 左詰め */
+      padding-left: 0.5em;
+      display: flex;
+      align-items: center; /* 上下中央寄せ */
+    }
     #select-area {
       display: flex; flex-wrap: wrap; justify-content: center;
       gap: 8px; margin-bottom: 1.5em; min-height: 3em;
@@ -25,17 +34,13 @@
       padding: 0.6em 1.5em; border: none; border-radius: 5px;
       cursor: pointer; margin-bottom: 0.5em;
     }
-    #purpose-input {
-      width: 17em; font-size: 1.0em; height: 2.5em; /* 高さを2〜3割増 */
-      text-align: left; padding-left: 0.5em; display: flex; align-items: center;
-    }
     #result-area { text-align: left; margin-left: 1.0em; display: inline-block; }
   </style>
 </head>
 <body>
-  <div id="version-label">Ver.0 Rev.6</div>
+  <div id="version-label">Ver.0 Rev.5a</div>
   <div id="purpose-area">
-    <label for="purpose-input"><strong>利用目的：</strong></label>
+    <label for="purpose-input"><strong>目的：</strong></label>
     <input id="purpose-input" type="text" maxlength="17" placeholder="例：コース mm/dd キャンセル調整">
   </div>
 
@@ -51,7 +56,6 @@
     const folderId = '1P9IpgCw1L_cvKjemIpg3ygtOAOUePWZh';  // Drive フォルダID
     const inputFile = 'input_data.txt';
 
-    // 起動時に候補者を1回だけ取得
     async function initCandidates() {
       const area = document.getElementById("select-area");
       try {
@@ -59,7 +63,6 @@
         const response = await fetch(url);
         if (!response.ok) throw new Error(`HTTPエラー ${response.status}`);
         const text = await response.text();
-        // 1行目のみカンマ分割
         const firstLine = text.split(/\r?\n/)[0];
         CANDIDATES = firstLine.split(',').slice(1).map(name => name.trim()).filter(name => name);
         renderCandidates();
@@ -68,5 +71,46 @@
       }
     }
 
-    // 候補者ボタンを生成
-    function renderCa
+    function renderCandidates() {
+      const area = document.getElementById("select-area");
+      area.innerHTML = '';
+      const fragment = document.createDocumentFragment();
+      CANDIDATES.forEach(name => {
+        const btn = document.createElement("button");
+        btn.textContent = name;
+        btn.className = "select-btn";
+        if (name.length > 4) btn.classList.add("small-text");
+        btn.onclick = () => btn.classList.toggle("selected");
+        fragment.appendChild(btn);
+      });
+      area.appendChild(fragment);
+    }
+
+    function generateRanking() {
+      const resultArea = document.getElementById("result-area");
+      const rankBtn = document.getElementById("rank-button");
+
+      rankBtn.disabled = true;
+      resultArea.innerHTML = `<div style="font-size:1.2em; color:#007bff;">順位決め中... <span id="loadingDots"></span></div>`;
+
+      let dots = 0;
+      const dotInterval = setInterval(() => {
+        dots = (dots + 1) % 4;
+        document.getElementById("loadingDots").textContent = ".".repeat(dots);
+      }, 500);
+
+      setTimeout(() => {
+        clearInterval(dotInterval);
+        showRankingResult();
+        rankBtn.disabled = false;
+      }, 3000);
+    }
+
+    function showRankingResult() {
+      const selected = Array.from(document.getElementsByClassName("select-btn"))
+        .filter(btn => btn.classList.contains("selected"))
+        .map(btn => btn.textContent);
+
+      const ordered = CANDIDATES.filter(name => selected.includes(name));
+      const shuffled = shuffle([...ordered]);
+      const purpose =
