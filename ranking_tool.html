@@ -29,11 +29,11 @@
   </style>
 </head>
 <body>
-  <div id="version-label">Ver.0 Rev.5</div>
+  <div id="version-label">Ver.0 Rev.5a</div>
   <div id="purpose-area">
     <label for="purpose-input"><strong>目的：</strong></label>
     <input id="purpose-input" type="text" maxlength="17"
-           style="width: 17em; font-size: 1.0em;" placeholder="例：コース mm/dd キャンセル調整">
+           style="width: 17em; font-size: 1.0em;" placeholder="例：コース名 mm/dd キャンセル調整">
   </div>
 
   <h2>候補者一覧</h2>
@@ -86,9 +86,9 @@
       const resultArea = document.getElementById("result-area");
       const rankBtn = document.getElementById("rank-button");
 
-      // ボタン無効化 & 順位決め中表示
+      // ボタン無効化 & 処理中表示
       rankBtn.disabled = true;
-      resultArea.innerHTML = `<div style="font-size:1.2em; color:#007bff;">順位決め中です... <span id="loadingDots"></span></div>`;
+      resultArea.innerHTML = `<div style="font-size:1.2em; color:#007bff;">処理中です... <span id="loadingDots"></span></div>`;
 
       // ドットアニメーション
       let dots = 0;
@@ -97,12 +97,12 @@
         document.getElementById("loadingDots").textContent = ".".repeat(dots);
       }, 500);
 
-      // 4秒後に結果表示
+      // 3秒後に結果表示
       setTimeout(() => {
         clearInterval(dotInterval);
         showRankingResult();
         rankBtn.disabled = false;
-      }, 4000);
+      }, 3000);
     }
 
     // 結果表示
