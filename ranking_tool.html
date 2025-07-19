@@ -2,142 +2,88 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>順位決め</title>
+  <title>シフト調整</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { font-family: sans-serif; text-align: center; margin: 1em; }
-    #version-label { position: absolute; top: 0.2em; left: 0.2em; font-size: 0.8em; color: #555; }
-    h2 { margin-bottom: 0.5em; }
-    #purpose-area { margin-bottom: 0.5em; }
-    #select-area {
-      display: flex; flex-wrap: wrap; justify-content: center;
-      gap: 8px; margin-bottom: 1.5em; min-height: 3em;
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+      text-align: center;
     }
-    .select-btn {
-      padding: 0.6em 1em; border-radius: 6px; border: 1px solid #888;
-      background-color: white; font-size: 1em; max-width: 8em;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    #grid {
+      display: grid;
+      grid-template-columns: repeat(32, 80px);
+      margin: 10px auto;
+      border-collapse: collapse;
     }
-    .select-btn.small-text { font-size: 0.85em; }
-    .select-btn.selected { background-color: limegreen; color: white; }
-    #rank-button {
-      font-size: 1.2em; background-color: red; color: white;
-      padding: 0.6em 1.5em; border: none; border-radius: 5px;
-      cursor: pointer; margin-bottom: 0.5em;
+    #grid div {
+      border: 1px solid #ccc;
+      padding: 4px;
+      box-sizing: border-box;
     }
-    #result-area { text-align: left; margin-left: 1.0em; display: inline-block; }
+    #version-label {
+      text-align: left;
+      margin: 10px;
+      font-size: 0.8em;
+      color: #555;
+    }
+    select, button {
+      margin: 5px;
+      padding: 5px 10px;
+      font-size: 1em;
+    }
+    #message {
+      margin: 5px;
+      font-size: 0.9em;
+      color: red;
+    }
   </style>
 </head>
 <body>
-  <div id="version-label">Ver.1 Rev.0</div>
-  <div id="purpose-area">
-    <label for="purpose-input"><strong>目的：</strong></label>
-    <input id="purpose-input" type="text" maxlength="17"
-           style="width: 17em; font-size: 1.0em;" placeholder="例：コース名 mm/dd キャンセル調整">
+  <h2>シフト調整</h2>
+  <div>
+    <label for="memberSelect">メンバー選択：</label>
+    <select id="memberSelect"></select>
+    <button onclick="loadDataForMember()">表示</button>
   </div>
-
-  <h2>候補者一覧</h2>
-  <div id="select-area">読み込み中...</div>
-  <button id="rank-button" onclick="generateRanking()">順位決め</button>
-  <div style="width: 100%;"></div>
-  <div id="result-area" style="margin-top: 0;"></div>
+  <div id="message"></div>
+  <div class="grid" id="grid"></div>
+  <div id="version-label">Ver.0 Rev.1</div>
 
   <script>
-    let CANDIDATES = [];
     const gasUrl = 'https://script.google.com/macros/s/AKfycbzCYQRN6hg9n8OERx11vJslBCvy0VmgO-nzMIryNO1gUD4Q1wim5srxDPCKsggYsMzf5g/exec';
-    const folderId = '1vY3sgy2XT6vSun_gq1O47EuOikCEeCOe';  // ranking_tool フォルダID
+    const folderId = '1P9IpgCw1L_cvKjemIpg3ygtOAOUePWZh';
     const inputFile = 'input_data.txt';
+    let allData = [];
 
-    // 起動時に候補者を1回だけ取得
-    async function initCandidates() {
-      const area = document.getElementById("select-area");
+    const memberSelect = document.getElementById("memberSelect");
+    const grid = document.getElementById("grid");
+    const message = document.getElementById("message");
+
+    // 起動時：1回だけ input_data.txt を読み込む
+    window.onload = initAllData;
+
+    async function initAllData() {
       try {
         const url = `${gasUrl}?action=read&folder=${folderId}&file=${inputFile}`;
         const response = await fetch(url);
         if (!response.ok) throw new Error(`HTTPエラー ${response.status}`);
         const text = await response.text();
-        // 1行目のみカンマ分割
-        const firstLine = text.split(/\r?\n/)[0];
-        CANDIDATES = firstLine.split(',').slice(1).map(name => name.trim()).filter(name => name);
-        renderCandidates();
+        allData = text.split('\n').filter(l => l.trim()).map(line => parseCSVLine(line));
+
+        initMemberSelect(allData[0]);
+        renderGrid(allData); // 初期表示
+        message.textContent = "データ読み込み完了";
       } catch (e) {
-        area.innerHTML = `<span style="color:red;">データ取得エラー: ${e.message}</span>`;
+        showMessage("データの読み込みに失敗しました。\n" + e.message);
       }
     }
 
-    // 候補者ボタンを生成
-    function renderCandidates() {
-      const area = document.getElementById("select-area");
-      area.innerHTML = '';
-      const fragment = document.createDocumentFragment();
-      CANDIDATES.forEach(name => {
-        const btn = document.createElement("button");
-        btn.textContent = name;
-        btn.className = "select-btn";
-        if (name.length > 4) btn.classList.add("small-text");
-        btn.onclick = () => btn.classList.toggle("selected");
-        fragment.appendChild(btn);
-      });
-      area.appendChild(fragment);
+    // メンバー選択リスト生成
+    function initMemberSelect(headerLine) {
+      const members = headerLine.slice(1);
+      memberSelect.innerHTML = members.map(m => `<option value="${m}">${m}</option>`).join('');
     }
 
-    // 「順位決め」クリック処理
-    function generateRanking() {
-      const resultArea = document.getElementById("result-area");
-      const rankBtn = document.getElementById("rank-button");
-
-      // ボタン無効化 & 処理中表示
-      rankBtn.disabled = true;
-      resultArea.innerHTML = `<div style="font-size:1.2em; color:#007bff;">処理中です... <span id="loadingDots"></span></div>`;
-
-      // ドットアニメーション
-      let dots = 0;
-      const dotInterval = setInterval(() => {
-        dots = (dots + 1) % 4;
-        document.getElementById("loadingDots").textContent = ".".repeat(dots);
-      }, 500);
-
-      // 3秒後に結果表示
-      setTimeout(() => {
-        clearInterval(dotInterval);
-        showRankingResult();
-        rankBtn.disabled = false;
-      }, 3000);
-    }
-
-    // 結果表示
-    function showRankingResult() {
-      const selected = Array.from(document.getElementsByClassName("select-btn"))
-        .filter(btn => btn.classList.contains("selected"))
-        .map(btn => btn.textContent);
-
-      const ordered = CANDIDATES.filter(name => selected.includes(name));
-      const shuffled = shuffle([...ordered]);
-      const purpose = document.getElementById("purpose-input").value.trim();
-      const resultArea = document.getElementById("result-area");
-      resultArea.innerHTML = "";
-
-      if (purpose) resultArea.innerHTML += `<div style="margin-bottom:0.5em;"><strong>目的：</strong>${purpose}</div>`;
-      resultArea.innerHTML += `<h3 style="margin-bottom: 0.2em;">結果一覧</h3>`;
-      shuffled.forEach((name, index) => {
-        resultArea.innerHTML += `<div>${index + 1}位：${name}</div>`;
-      });
-
-      const now = new Date();
-      const formatted = `${now.getFullYear()}年${String(now.getMonth()+1).padStart(2,'0')}月${String(now.getDate()).padStart(2,'0')}日 ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-      resultArea.innerHTML += `<div style="margin-top:0.5em; font-size:1em;">実施：${formatted}</div>`;
-    }
-
-    // 配列シャッフル
-    function shuffle(array) {
-      for (let i = array.length - 1; i > 0; i--) {
-        const r = Math.floor(Math.random() * (i + 1));
-        [array[i], array[r]] = [array[r], array[i]];
-      }
-      return array;
-    }
-
-    window.onload = initCandidates;
-  </script>
-</body>
-</html>
+    // メンバー表示切替
