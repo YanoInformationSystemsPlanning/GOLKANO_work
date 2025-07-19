@@ -8,7 +8,7 @@
     body { font-family: sans-serif; text-align: center; margin: 1em; }
     #version-label { position: absolute; top: 0.2em; left: 0.2em; font-size: 0.8em; color: #555; }
     h2 { margin-bottom: 0.5em; }
-    #purpose-area { margin-bottom: 0.5em; }
+    #purpose-area { margin-top: 1.5em; margin-bottom: 0.5em; } /* バージョン表示行と同じ高さ分の余白 */
     #select-area {
       display: flex; flex-wrap: wrap; justify-content: center;
       gap: 8px; margin-bottom: 1.5em; min-height: 3em;
@@ -25,15 +25,18 @@
       padding: 0.6em 1.5em; border: none; border-radius: 5px;
       cursor: pointer; margin-bottom: 0.5em;
     }
+    #purpose-input {
+      width: 17em; font-size: 1.0em; height: 2.5em; /* 高さを2〜3割増 */
+      text-align: left; padding-left: 0.5em; display: flex; align-items: center;
+    }
     #result-area { text-align: left; margin-left: 1.0em; display: inline-block; }
   </style>
 </head>
 <body>
-  <div id="version-label">Ver.0 Rev.5</div>
+  <div id="version-label">Ver.0 Rev.6</div>
   <div id="purpose-area">
-    <label for="purpose-input"><strong>目的：</strong></label>
-    <input id="purpose-input" type="text" maxlength="17"
-           style="width: 17em; font-size: 1.0em;" placeholder="例：コース mm/dd キャンセル調整">
+    <label for="purpose-input"><strong>利用目的：</strong></label>
+    <input id="purpose-input" type="text" maxlength="17" placeholder="例：コース mm/dd キャンセル調整">
   </div>
 
   <h2>候補者一覧</h2>
@@ -66,78 +69,4 @@
     }
 
     // 候補者ボタンを生成
-    function renderCandidates() {
-      const area = document.getElementById("select-area");
-      area.innerHTML = '';
-      const fragment = document.createDocumentFragment();
-      CANDIDATES.forEach(name => {
-        const btn = document.createElement("button");
-        btn.textContent = name;
-        btn.className = "select-btn";
-        if (name.length > 4) btn.classList.add("small-text");
-        btn.onclick = () => btn.classList.toggle("selected");
-        fragment.appendChild(btn);
-      });
-      area.appendChild(fragment);
-    }
-
-    // 「順位決め」クリック処理
-    function generateRanking() {
-      const resultArea = document.getElementById("result-area");
-      const rankBtn = document.getElementById("rank-button");
-
-      // ボタン無効化 & 処理中表示
-      rankBtn.disabled = true;
-      resultArea.innerHTML = `<div style="font-size:1.2em; color:#007bff;">抽選中です... <span id="loadingDots"></span></div>`;
-
-      // ドットアニメーション
-      let dots = 0;
-      const dotInterval = setInterval(() => {
-        dots = (dots + 1) % 4;
-        document.getElementById("loadingDots").textContent = ".".repeat(dots);
-      }, 500);
-
-      // 3秒後に結果表示
-      setTimeout(() => {
-        clearInterval(dotInterval);
-        showRankingResult();
-        rankBtn.disabled = false;
-      }, 3000);
-    }
-
-    // 結果表示
-    function showRankingResult() {
-      const selected = Array.from(document.getElementsByClassName("select-btn"))
-        .filter(btn => btn.classList.contains("selected"))
-        .map(btn => btn.textContent);
-
-      const ordered = CANDIDATES.filter(name => selected.includes(name));
-      const shuffled = shuffle([...ordered]);
-      const purpose = document.getElementById("purpose-input").value.trim();
-      const resultArea = document.getElementById("result-area");
-      resultArea.innerHTML = "";
-
-      if (purpose) resultArea.innerHTML += `<div style="margin-bottom:0.5em;"><strong>目的：</strong>${purpose}</div>`;
-      resultArea.innerHTML += `<h3 style="margin-bottom: 0.2em;">結果一覧</h3>`;
-      shuffled.forEach((name, index) => {
-        resultArea.innerHTML += `<div>${index + 1}位：${name}</div>`;
-      });
-
-      const now = new Date();
-      const formatted = `${now.getFullYear()}年${String(now.getMonth()+1).padStart(2,'0')}月${String(now.getDate()).padStart(2,'0')}日 ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-      resultArea.innerHTML += `<div style="margin-top:0.5em; font-size:1em;">実施：${formatted}</div>`;
-    }
-
-    // 配列シャッフル
-    function shuffle(array) {
-      for (let i = array.length - 1; i > 0; i--) {
-        const r = Math.floor(Math.random() * (i + 1));
-        [array[i], array[r]] = [array[r], array[i]];
-      }
-      return array;
-    }
-
-    window.onload = initCandidates;
-  </script>
-</body>
-</html>
+    function renderCa
