@@ -210,7 +210,7 @@
           if (c > 0) {
             cell.textContent = val;
             cell.onclick = () => {
-              const states = ["●", "▲", "NG", ""];
+              const states = ["●", "△", "NG", ""];
               const idx = states.indexOf(cell.textContent);
               cell.textContent = states[(idx + 1) % 4];
             };
