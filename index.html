@@ -17,11 +17,19 @@
       align-items: center;
       justify-content: center;
       margin-top: 20px;
-      gap: 20px;
+      gap: 10px;
+      padding: 0 10px;
+      flex-wrap: nowrap;
     }
     .logo {
-      max-width: 300px;
+      max-width: 60%; /* 基本は横幅の6割まで */
       height: auto;
+      flex-shrink: 1;
+    }
+    @media (max-width: 480px) {
+      .logo {
+        max-width: 50%; /* スマホ縦画面でさらに縮小 */
+      }
     }
     .menu-button {
       display: block;
@@ -49,6 +57,12 @@
       font-size: 14px;
       color: #555;
       font-weight: bold;
+    }
+    #userTypeLabel {
+      font-size: 18px;
+      font-weight: bold;
+      color: #333;
+      white-space: nowrap;
     }
 
     /* パスワードモーダル */
@@ -85,17 +99,11 @@
       display: none;
       margin-top: 5px;
     }
-
-    #userTypeLabel {
-      font-size: 20px;
-      font-weight: bold;
-      color: #333;
-    }
   </style>
 </head>
 <body>
   <!-- バージョン表示 -->
-  <div class="version-label">Ver.0 Rev.2</div>
+  <div class="version-label">Ver.0 Rev.1</div>
 
   <!-- ヘッダー領域（ロゴ + 利用種別） -->
   <div class="header-area">
