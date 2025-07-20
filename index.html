@@ -32,23 +32,69 @@
     .menu-button:hover {
       background-color: #45a049;
     }
+    .admin-button {
+      background-color: #d9534f; /* 赤背景 */
+    }
+    .version-label {
+      position: fixed;
+      top: 5px;
+      left: 10px;
+      font-size: 14px;
+      color: #555;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
+  <!-- バージョン表示 -->
+  <div class="version-label">Ver.1 Rev.0</div>
+
   <!-- ロゴ画像 -->
   <img src="GOLKANO.ロゴ.png" alt="GOLKANO ロゴ" class="logo">
 
-  <!-- ボタン群 -->
-  <button class="menu-button" onclick="location.href='shift_adjustment_survay.html'">
-    シフト調整
-  </button>
+  <!-- 利用区分ボタン -->
+  <div id="userTypeButtons">
+    <button class="menu-button" onclick="showGeneralMenu()">一般利用</button>
+    <button class="menu-button" onclick="showAdminMenu()">管理者利用</button>
+  </div>
 
-  <button class="menu-button" onclick="location.href='ranking_tool.html'">
-    優先順位決め
-  </button>
+  <!-- メニュー表示領域 -->
+  <div id="menuArea"></div>
 
-  <button class="menu-button" onclick="location.href='work_completion_report.html'">
-    業務終了報告
-  </button>
+  <script>
+    function removeUserTypeButtons() {
+      const btns = document.getElementById('userTypeButtons');
+      if (btns) btns.remove();
+    }
+
+    function showGeneralMenu() {
+      removeUserTypeButtons();
+      const area = document.getElementById('menuArea');
+      area.innerHTML = `
+        <button class="menu-button" onclick="location.href='shift_adjustment_survay.html'">シフト調整</button>
+        <button class="menu-button" onclick="location.href='work_completion_report.html'">業務終了報告</button>
+      `;
+    }
+
+    function showAdminMenu() {
+      const today = new Date();
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      const dd = String(today.getDate()).padStart(2, '0');
+      const expected = ['gk' + mm + dd, 'GK' + mm + dd];
+
+      const input = prompt('パスワードを入力してください（6桁英数字）');
+      if (input && expected.includes(input)) {
+        removeUserTypeButtons();
+        const area = document.getElementById('menuArea');
+        area.innerHTML = `
+          <button class="menu-button" onclick="location.href='shift_adjustment_survay.html'">シフト調整</button>
+          <button class="menu-button" onclick="location.href='work_completion_report.html'">業務終了報告</button>
+          <button class="menu-button admin-button" onclick="location.href='ranking_tool.html'">優先順位決め</button>
+        `;
+      } else {
+        alert('パスワードが間違っています。');
+      }
+    }
+  </script>
 </body>
 </html>
