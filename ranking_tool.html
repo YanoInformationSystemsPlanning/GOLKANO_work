@@ -6,7 +6,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body { font-family: sans-serif; text-align: center; margin: 1em; }
-    #version-label { position: absolute; top: 0.2em; left: 0.2em; font-size: 0.8em; color: #555; }
+    #version-label {
+      position: absolute;
+      top: 0.2em;
+      left: 0.2em;
+      font-size: 0.8em;
+      color: #555;
+    }
+    #content-wrapper {
+      margin-top: 1em; /* JSで動的に調整 */
+    }
     h2 { margin-bottom: 0.5em; }
     #purpose-area { margin-bottom: 0.5em; }
     #select-area {
@@ -29,18 +38,20 @@
   </style>
 </head>
 <body>
-  <div id="version-label">Ver.1 Rev.0</div>
-  <div id="purpose-area">
-    <label for="purpose-input"><strong>目的：</strong></label>
-    <input id="purpose-input" type="text" maxlength="17"
-           style="width: 17em; font-size: 1.0em;" placeholder="例：コース名 mm/dd キャンセル調整">
-  </div>
+  <div id="version-label">Ver.1 Rev.1</div>
+  <div id="content-wrapper">
+    <div id="purpose-area">
+      <label for="purpose-input"><strong>目的：</strong></label>
+      <input id="purpose-input" type="text" maxlength="17"
+             style="width: 17em; font-size: 1.0em;" placeholder="例：コース名 mm/dd キャンセル調整">
+    </div>
 
-  <h2>候補者一覧</h2>
-  <div id="select-area">読み込み中...</div>
-  <button id="rank-button" onclick="generateRanking()">順位決め</button>
-  <div style="width: 100%;"></div>
-  <div id="result-area" style="margin-top: 0;"></div>
+    <h2>候補者一覧</h2>
+    <div id="select-area">読み込み中...</div>
+    <button id="rank-button" onclick="generateRanking()">順位決め</button>
+    <div style="width: 100%;"></div>
+    <div id="result-area" style="margin-top: 0;"></div>
+  </div>
 
   <script>
     let CANDIDATES = [];
@@ -137,7 +148,18 @@
       return array;
     }
 
-    window.onload = initCandidates;
+    // Ver.? Rev.? の高さを考慮して余白調整
+    function adjustContentMargin() {
+      const version = document.getElementById('version-label');
+      const wrapper = document.getElementById('content-wrapper');
+      const height = version.offsetHeight;
+      wrapper.style.marginTop = (height * 1.2) + 'px';  // 高さ + 20%
+    }
+
+    window.onload = function() {
+      initCandidates();
+      adjustContentMargin();
+    };
   </script>
 </body>
 </html>
