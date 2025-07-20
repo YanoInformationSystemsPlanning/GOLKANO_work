@@ -16,7 +16,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-top: 20px;
+      margin-top: 20px; /* JSで動的に上書き */
       gap: 10px;
       padding: 0 10px;
       flex-wrap: nowrap;
@@ -103,7 +103,7 @@
 </head>
 <body>
   <!-- バージョン表示 -->
-  <div class="version-label">Ver.1 Rev.0</div>
+  <div class="version-label">Ver.1 Rev.1</div>
 
   <!-- ヘッダー領域（ロゴ + 利用種別） -->
   <div class="header-area">
@@ -186,6 +186,18 @@
         passwordInput.focus();
       }
     }
+
+    // Ver.? Rev.? の高さを基準に余白を追加
+    function adjustHeaderMargin() {
+      const versionLabel = document.querySelector('.version-label');
+      const header = document.querySelector('.header-area');
+      const height = versionLabel.offsetHeight;
+      header.style.marginTop = (height * 1.2) + 'px'; // 高さ + 20%
+    }
+
+    window.onload = function() {
+      adjustHeaderMargin();
+    };
   </script>
 </body>
 </html>
