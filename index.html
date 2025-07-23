@@ -75,14 +75,14 @@
       margin-top: 10px;
       display: none;
     }
+    #errorOkButton {
+      margin-top: 10px;
+      background-color: #d9534f;
+    }
     #loginTitle {
       font-size: 1.5em;
       font-weight: bold;
       line-height: 1.5em;
-    }
-    #errorOkButton {
-      margin-top: 10px;
-      background-color: #d9534f;
     }
   </style>
 </head>
@@ -112,7 +112,7 @@
         const url = `${gasUrl}?action=read&folder=${folderKeyword}&file=${fileName}`;
         const res = await fetch(url);
         const text = await res.text();
-        idPwPairs = text.split(/\\r?\\n/)
+        idPwPairs = text.split(/\r?\n/)
                         .filter(line => line.includes(','))
                         .map(line => line.split(',').map(s => s.trim()));
       } catch (e) {
@@ -152,12 +152,7 @@
       }
 
       // キャッシュ済みデータで判定
-      const match = idPwPairs.some(parts => {
-        if (parts.length >= 3) {
-          return parts[1] === inputId && parts[2] === inputPw;
-        }
-        return false;
-      });
+      const match = idPwPairs.some(([name, id, pw]) => id === inputId && pw === inputPw);
 
       if (match) {
         window.location.href = "top_menu.html";
