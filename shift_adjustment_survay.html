@@ -13,6 +13,7 @@
       width: 100vw;
       height: 100vh;
       overflow: auto;
+      overscroll-behavior: none; /* iOS15+や最新ブラウザ向けバウンス防止 */
     }
     .header-bar {
       display: flex;
@@ -34,6 +35,8 @@
       grid-template-columns: 110px repeat(31, 36px);
       grid-auto-rows: 30px;
       min-width: max-content;
+      /* grid単体スクロールの慣性を維持 */
+      -webkit-overflow-scrolling: touch;
     }
     .cell {
       border: 1px solid #ccc;
@@ -47,7 +50,7 @@
     }
     .header-1 { position: sticky; top: 0; background: #eee; z-index: 5; }
     .header-2 { position: sticky; top: 30px; background: #eee; z-index: 5; }
-    .header-3 { position: sticky; top: 60px; background: #ccffcc; z-index: 5; } /* 明るい緑 */
+    .header-3 { position: sticky; top: 60px; background: #ccffcc; z-index: 5; }
     .fixed-col { position: sticky; left: 0; background: #f8f8f8; padding-left: 2.5em; z-index: 4; }
     .header-1.fixed-col { background: #eee; z-index: 6; }
     .header-2.fixed-col { background: #eee; z-index: 6; }
@@ -133,6 +136,13 @@
   </div>
 
 <script>
+  // iOSバウンス防止（grid外のスクロールは無効）
+  document.addEventListener('touchmove', function(e) {
+    if (!e.target.closest('.grid')) {
+      e.preventDefault();
+    }
+  }, { passive: false });
+
   const grid = document.getElementById("grid");
   const memberNameSpan = document.getElementById("memberName");
   const targetDateSpan = document.getElementById("targetDate");
@@ -275,9 +285,9 @@
     month = ym[2];
     targetDateSpan.textContent = `対象：${year}年${month}月`;
 
-    merged[0] = inputLines[1];  // 日付
-    merged[1] = inputLines[2];  // 曜日
-    merged[2] = outputLines[4] || inputLines[3];  // 対応可能
+    merged[0] = inputLines[1];
+    merged[1] = inputLines[2];
+    merged[2] = outputLines[4] || inputLines[3];
     for (let r = 4; r < inputLines.length; r++) {
       merged.push(inputLines[r]);
     }
