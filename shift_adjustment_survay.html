@@ -35,7 +35,6 @@
       grid-template-columns: 110px repeat(31, 36px);
       grid-auto-rows: 30px;
       min-width: max-content;
-      /* grid単体スクロールの慣性を維持 */
       -webkit-overflow-scrolling: touch;
     }
     .cell {
@@ -121,7 +120,7 @@
     <button id="exportBtn" style="display:none;">回答提出</button>
   </div>
   <div class="grid" id="grid"></div>
-  <div id="version-label" style="text-align:left; margin:10px;">Ver.1 Rev.3</div>
+  <div id="version-label" style="text-align:left; margin:10px;">Ver.1 Rev.4</div>
 
   <div id="messageBox"></div>
 
@@ -136,7 +135,7 @@
   </div>
 
 <script>
-  // iOSバウンス防止（grid外のスクロールは無効）
+  // iOSバウンス防止
   document.addEventListener('touchmove', function(e) {
     if (!e.target.closest('.grid')) {
       e.preventDefault();
@@ -173,6 +172,11 @@
   const userName = localStorage.getItem("userName") || "未設定";
   memberNameSpan.textContent = userName;
 
+  // ページDOM読み込み直後に「処理中」を表示
+  document.addEventListener("DOMContentLoaded", () => {
+    loadingStatus.textContent = "処理中...";
+  });
+
   function showMessage(msg, type = 'info') {
     messageBox.className = `show ${type}`;
     messageBox.textContent = msg;
@@ -184,6 +188,7 @@
   }
 
   function initAllData() {
+    loadingStatus.textContent = "処理中...";
     fetch(`${gasUrl}?action=read&folder=${folderKeyword}&file=input_data.txt`)
       .then(res => res.text())
       .then(text => {
