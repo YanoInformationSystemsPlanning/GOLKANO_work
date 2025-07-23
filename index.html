@@ -87,7 +87,7 @@
   </style>
 </head>
 <body>
-  <div class="version-label">Ver.1 Rev.2</div>
+  <div class="version-label">Ver.1 Rev.3</div>
   <div class="header-area">
     <img src="GOLKANO.ロゴ.png" alt="GOLKANO ロゴ" class="logo">
     <div id="loginTitle">ログイン</div>
@@ -152,9 +152,11 @@
       }
 
       // キャッシュ済みデータで判定
-      const match = idPwPairs.some(([name, id, pw]) => id === inputId && pw === inputPw);
+      const match = idPwPairs.find(([name, id, pw]) => id === inputId && pw === inputPw);
 
       if (match) {
+        const userName = match[0]; // 操作者の氏名
+        localStorage.setItem("userName", userName); // localStorageに保存
         window.location.href = "top_menu.html";
       } else {
         showError("ID or PW が正しくありません。再入力してください。");
