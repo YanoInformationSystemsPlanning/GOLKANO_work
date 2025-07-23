@@ -110,6 +110,19 @@
   </style>
 </head>
 <body>
+  <!-- 戻るボタン -->
+  <button onclick="goPreviousPage()">前の画面に戻る</button>
+  <script>
+    function goPreviousPage() {
+      const previous = sessionStorage.getItem('previousPage');
+      if (previous) {
+        location.href = previous;
+      } else {
+        location.href = 'index.html';
+      }
+    }
+  </script>
+
   <!-- バージョン表示 -->
   <div class="version-label">Ver.1 Rev.0</div>
 
