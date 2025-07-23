@@ -30,7 +30,7 @@
       flex-wrap: nowrap;
     }
     .logo {
-      height: 1.5em;
+      height: 1.5em; /* ログイン文字に近い高さに固定 */
       width: auto;
       flex-shrink: 0;
     }
@@ -48,7 +48,11 @@
       text-align: center;
       width: 300px;
     }
-    input, button {
+    h1 {
+      font-size: 1.5em;
+      margin-bottom: 20px;
+    }
+    input {
       width: 100%;
       padding: 10px;
       margin: 5px 0;
@@ -57,9 +61,14 @@
       border-radius: 4px;
     }
     button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      font-size: 1em;
       background-color: #4CAF50;
       color: white;
       border: none;
+      border-radius: 4px;
       cursor: pointer;
     }
     button:hover {
@@ -75,14 +84,10 @@
       font-weight: bold;
       line-height: 1.5em;
     }
-    #errorOkButton {
-      background-color: #d9534f;
-      margin-top: 10px;
-    }
   </style>
 </head>
 <body>
-  <div class="version-label">Ver.1 Rev.2</div>
+  <div class="version-label">Ver.1 Rev.1</div>
   <div class="header-area">
     <img src="GOLKANO.ロゴ.png" alt="GOLKANO ロゴ" class="logo">
     <div id="loginTitle">ログイン</div>
@@ -91,8 +96,8 @@
   <div class="login-container">
     <input type="text" id="inputId" placeholder="ID">
     <input type="password" id="inputPw" placeholder="パスワード">
-    <button id="loginBtn" onclick="checkCredentials()">ログイン</button>
-    <div id="loginError"></div>
+    <button onclick="checkCredentials()">ログイン</button>
+    <div id="loginError">ID or PW が正しくありません。再入力してください。</div>
   </div>
 
   <script>
@@ -101,6 +106,7 @@
     const fileName = "id_pw_list.txt";
     let idPwPairs = [];
 
+    // ページロード時にid_pw_list.txtを読み込みキャッシュ
     async function preloadIdPwList() {
       try {
         const url = `${gasUrl}?action=read&folder=${folderKeyword}&file=${fileName}`;
@@ -113,51 +119,26 @@
       }
     }
 
-    function showError(msg) {
-      const loginError = document.getElementById("loginError");
-      const loginBtn = document.getElementById("loginBtn");
-      const inputId = document.getElementById("inputId");
-      const inputPw = document.getElementById("inputPw");
-
-      // 入力欄とログインボタンを無効化
-      inputId.disabled = true;
-      inputPw.disabled = true;
-      loginBtn.disabled = true;
-
-      loginError.innerHTML = msg + "<br><button id='errorOkButton' onclick='resetError()'>OK</button>";
-      loginError.style.display = "block";
-    }
-
-    function resetError() {
-      const loginError = document.getElementById("loginError");
-      const loginBtn = document.getElementById("loginBtn");
-      const inputId = document.getElementById("inputId");
-      const inputPw = document.getElementById("inputPw");
-
-      loginError.style.display = "none";
-      inputId.disabled = false;
-      inputPw.disabled = false;
-      loginBtn.disabled = false;
-
-      inputPw.value = "";
-      inputId.focus();
-    }
-
     function checkCredentials() {
       const inputId = document.getElementById("inputId").value.trim();
       const inputPw = document.getElementById("inputPw").value.trim();
+      const loginError = document.getElementById("loginError");
+      loginError.style.display = "none";
 
       if (!inputId || !inputPw) {
-        showError("IDとPWを入力してください。");
+        loginError.textContent = "IDとPWを入力してください。";
+        loginError.style.display = "block";
         return;
       }
 
+      // ローカルキャッシュで判定
       const match = idPwPairs.some(([name, id, pw]) => id === inputId && pw === inputPw);
 
       if (match) {
         window.location.href = "top_menu.html";
       } else {
-        showError("ID or PW が正しくありません。再入力してください。");
+        loginError.textContent = "ID or PW が正しくありません。再入力してください。";
+        loginError.style.display = "block";
       }
     }
 
