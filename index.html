@@ -30,13 +30,13 @@
       flex-wrap: nowrap;
     }
     .logo {
-      max-width: 60%;
-      height: auto;
-      flex-shrink: 1;
+      height: 1.5em; /* ログイン文字に近い高さに固定 */
+      width: auto;
+      flex-shrink: 0;
     }
     @media (max-width: 480px) {
       .logo {
-        max-width: 50%;
+        height: 1.2em;
       }
     }
     .login-container {
@@ -79,13 +79,18 @@
       margin-top: 10px;
       display: none;
     }
+    #loginTitle {
+      font-size: 1.5em;
+      font-weight: bold;
+      line-height: 1.5em;
+    }
   </style>
 </head>
 <body>
   <div class="version-label">Ver.1 Rev.0</div>
   <div class="header-area">
     <img src="GOLKANO.ロゴ.png" alt="GOLKANO ロゴ" class="logo">
-    <div id="loginTitle" style="font-size: 1.5em; font-weight: bold;">ログイン</div>
+    <div id="loginTitle">ログイン</div>
   </div>
 
   <div class="login-container">
