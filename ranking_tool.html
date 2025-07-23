@@ -38,6 +38,19 @@
   </style>
 </head>
 <body>
+  <!-- 戻るボタン -->
+  <button onclick="goPreviousPage()">前の画面に戻る</button>
+  <script>
+    function goPreviousPage() {
+      const previous = sessionStorage.getItem('previousPage');
+      if (previous) {
+        location.href = previous;
+      } else {
+        location.href = 'index.html';
+      }
+    }
+  </script>
+
   <div id="version-label">Ver.1 Rev.2</div>
   <div id="content-wrapper">
     <div id="purpose-area">
