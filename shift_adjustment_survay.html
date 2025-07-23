@@ -23,110 +23,72 @@
       border-bottom: 1px solid #ccc;
       font-size: 14px;
     }
+    .status {
+      font-weight: bold;
+      color: red;
+    }
     select, button {
       padding: 2px 6px;
       font-size: 14px;
       cursor: pointer;
     }
-    .status { font-weight: bold; color: red; }
     .grid {
       display: grid;
-      grid-template-columns: 110px repeat(31, 36px);
-      grid-auto-rows: 30px;
-      min-width: max-content;
-    }
-    .cell {
       border: 1px solid #ccc;
-      text-align: center;
-      line-height: 30px;
-      white-space: nowrap;
-      user-select: none;
-      background: white;
-      font-size: 14px;
-      overflow: hidden;
+      margin: 10px;
+      overflow-x: auto;
     }
-    .header-1 { position: sticky; top: 0; background: #eee; z-index: 5; }
-    .header-2 { position: sticky; top: 30px; background: #eee; z-index: 5; }
-    .header-3 { position: sticky; top: 60px; background: #ccffcc; z-index: 5; } /* 明るい緑 */
-    .fixed-col { position: sticky; left: 0; background: #f8f8f8; padding-left: 2.5em; z-index: 4; }
-    .header-1.fixed-col { background: #eee; z-index: 6; }
-    .header-2.fixed-col { background: #eee; z-index: 6; }
-    .header-3.fixed-col { background: #ccffcc !important; z-index: 6; }
-    .highlight-red { background: red !important; color: white; }
-    .highlight-gray { background: gray !important; color: white; }
-    .red { color: red; }
-
+    .grid > div {
+      border: 1px solid #ccc;
+      padding: 5px;
+      text-align: center;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .editable {
+      background-color: #f9f9f9;
+      cursor: pointer;
+    }
+    .selected {
+      background-color: #ffeb3b;
+    }
+    .holiday {
+      background-color: #e6f7ff;
+    }
     #messageBox {
       position: fixed;
       top: 10px;
       right: 10px;
       background: #333;
       color: white;
-      padding: 10px 20px;
-      border-radius: 5px;
-      opacity: 0;
-      transition: opacity 0.3s;
-      z-index: 9999;
-      pointer-events: none;
-    }
-    #messageBox.show { opacity: 1; }
-    #messageBox.success { background: #28a745; }
-    #messageBox.error { background: #dc3545; }
-    #messageBox.info { background: #007bff; }
-
-    #passwordModal {
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0, 0, 0, 0.5);
+      padding: 10px;
+      border-radius: 4px;
       display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 10000;
+      z-index: 100;
     }
-    #passwordModal .modal-content {
-      background: #fff;
-      padding: 20px;
-      border-radius: 5px;
-      text-align: center;
-      width: 250px;
-    }
-    #passwordModal input {
-      width: 100%;
-      padding: 5px;
-      margin-top: 10px;
-      font-size: 16px;
-    }
-    #passwordModal button {
-      margin-top: 10px;
-      padding: 5px 10px;
-      font-size: 14px;
-      margin-right: 5px;
-    }
-    #passwordError {
-      color: red;
-      display: none;
-      margin-top: 5px;
+    #messageBox.show {
+      display: block;
     }
   </style>
 </head>
 <body>
   <div class="header-bar">
-    <span>回答者：</span>
-    <select id="memberSelect"></select>
+    <span id="userNameDisplay"></span>
     <span id="targetDate"></span>
     <span id="loadingStatus" class="status"></span>
     <button id="exportBtn" style="display:none;">回答提出</button>
   </div>
   <div class="grid" id="grid"></div>
-  <div id="version-label" style="text-align:left; margin:10px;">Ver.1 Rev.1</div>
+  <div id="version-label" style="text-align:left; margin:10px;">Ver.2 Rev.0</div>
 
   <div id="messageBox"></div>
 
-  <div id="passwordModal">
-    <div class="modal-content">
+  <!-- パスワードモーダル -->
+  <div id="passwordModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
+    <div style="background:white; padding:20px; border-radius:5px; max-width:300px; margin:auto;">
       <div id="passwordPrompt">パスワードを入力してください</div>
-      <input type="text" id="passwordInput" maxlength="3">
-      <div id="passwordError">パスワードが違います</div>
+      <input type="password" id="passwordInput" style="width:100%; padding:5px; margin:10px 0;">
+      <div id="passwordError" style="color:red; display:none;">パスワードが違います</div>
       <button id="passwordOkBtn">OK</button>
       <button id="passwordCancelBtn">キャンセル</button>
     </div>
@@ -134,7 +96,6 @@
 
 <script>
   const grid = document.getElementById("grid");
-  const memberSelect = document.getElementById("memberSelect");
   const targetDateSpan = document.getElementById("targetDate");
   const loadingStatus = document.getElementById("loadingStatus");
   const exportBtn = document.getElementById("exportBtn");
@@ -160,6 +121,9 @@
   let passwordCallback = null;
   let savedPasswordForCheck = '';
 
+  const userName = localStorage.getItem("userName") || "不明なユーザー";
+  document.getElementById("userNameDisplay").textContent = `回答者：${userName}`;
+
   function showMessage(msg, type = 'info') {
     messageBox.className = `show ${type}`;
     messageBox.textContent = msg;
@@ -175,161 +139,23 @@
       .then(res => res.text())
       .then(text => {
         allInputLines = text.split('\n').filter(l => l.trim());
-        const memberLine = parseCSVLine(allInputLines[0]);
-        const members = memberLine.slice(1);
-        memberSelect.innerHTML = members.map(m => `<option value="${m}">${m}</option>`).join('');
+        const ym = parseCSVLine(allInputLines[0]);
+        year = ym[1];
+        month = ym[2];
+        targetDateSpan.textContent = `対象：${year}年${month}月`;
+
+        // ユーザー情報からデータ読み込み
+        loadDataForUser();
       })
       .catch(err => showMessage("ヘッダ情報の読み込みに失敗しました。\n" + err.message, 'error'));
   }
 
-  function loadGridFromData(lines) {
-    grid.innerHTML = '';
-    cellRefs = [];
-    const data = lines.map(parseCSVLine);
-    const rowCount = data.length;
-    const colCount = 32;
-    const fragment = document.createDocumentFragment();
-
-    for (let r = 0; r < rowCount; r++) {
-      const row = [];
-      for (let c = 0; c < colCount; c++) {
-        const cell = document.createElement("div");
-        cell.className = "cell";
-        const val = data[r]?.[c] ?? '';
-        if (c === 0) cell.classList.add("fixed-col");
-
-        if (r === 0) {
-          cell.classList.add("header-1");
-          cell.textContent = c > 0 ? val : "日付";
-        } else if (r === 1) {
-          cell.classList.add("header-2");
-          cell.innerHTML = c > 0 ? (['土','日'].includes(val) ? `<span class="red">${val}</span>` : val) : "曜日";
-        } else if (r === 2) {
-          cell.classList.add("header-3");
-          if (c === 0) cell.classList.add("fixed-col");
-          if (c > 0) {
-            cell.textContent = val;
-            cell.onclick = () => {
-              const states = ["●", "△", "NG", ""];
-              const idx = states.indexOf(cell.textContent);
-              cell.textContent = states[(idx + 1) % 4];
-            };
-          } else {
-            cell.textContent = "対応可能";
-          }
-        } else {
-          cell.textContent = val;
-          if (c > 0 && val !== "") {
-            cell.onclick = () => handleCellClick(r, c, cell);
-          }
-        }
-        fragment.appendChild(cell);
-        row.push(cell);
-      }
-      cellRefs.push(row);
-    }
-    grid.appendChild(fragment);
-    applyHighlight();
-  }
-
-  function handleCellClick(rowIndex, colIndex, cell) {
-    const currentState = cell.classList.contains("highlight-red")
-      ? "red"
-      : cell.classList.contains("highlight-gray")
-      ? "gray"
-      : "none";
-
-    const columnHasRed = cellRefs.some((row, r) => r >= 3 && row[colIndex].classList.contains("highlight-red"));
-
-    if (currentState === "red") {
-      // 赤 → 灰 → なし
-      cell.classList.remove("highlight-red");
-      cell.classList.add("highlight-gray");
-    } else if (currentState === "gray") {
-      cell.classList.remove("highlight-gray");
-    } else {
-      // none
-      if (!columnHasRed) {
-        cell.classList.add("highlight-red");
-      } else {
-        cell.classList.add("highlight-gray");
-      }
-    }
-  }
-
-  function applyHighlight() {
-    for (let r = 3; r < highlightData.length - 2; r++) {
-      const row = highlightData[r + 2]?.split(',') || [];
-      for (let c = 1; c < row.length; c++) {
-        if (row[c] === 'R') cellRefs[r][c].classList.add("highlight-red");
-        else if (row[c] === 'G') cellRefs[r][c].classList.add("highlight-gray");
-      }
-    }
-  }
-
-  function mergeInputAndOutput(inputLines, outputLines) {
-    const merged = [];
-    highlightData = [...outputLines];
-
-    const ym = parseCSVLine(outputLines[1]);
-    year = ym[1];
-    month = ym[2];
-    targetDateSpan.textContent = `対象：${year}年${month}月`;
-
-    merged[0] = inputLines[2];
-    merged[1] = inputLines[3];
-    merged[2] = outputLines[4] || inputLines[4];
-
-    for (let r = 5; r < inputLines.length; r++) {
-      merged.push(inputLines[r]);
-    }
-    return merged;
-  }
-
-  function openPasswordModal(message, callback, savedPassword = null) {
-    passwordPrompt.textContent = message;
-    passwordInput.value = '';
-    passwordError.style.display = 'none';
-    passwordModal.style.display = 'flex';
-    passwordCallback = callback;
-    savedPasswordForCheck = savedPassword;
-    passwordInput.focus();
-  }
-
-  passwordOkBtn.addEventListener('click', () => {
-    const pw = passwordInput.value.trim();
-    if (pw === '') {
-      passwordError.textContent = 'パスワードを入力してください';
-      passwordError.style.display = 'block';
-      return;
-    }
-    if (savedPasswordForCheck && pw !== savedPasswordForCheck) {
-      passwordError.textContent = 'パスワードが違います';
-      passwordError.style.display = 'block';
-      passwordInput.value = '';
-      return;
-    }
-    if (!savedPasswordForCheck && pw.length !== 3) {
-      passwordError.textContent = 'パスワードは3桁で入力してください';
-      passwordError.style.display = 'block';
-      return;
-    }
-    passwordModal.style.display = 'none';
-    if (passwordCallback) passwordCallback(pw);
-  });
-
-  passwordCancelBtn.addEventListener('click', () => {
-    passwordModal.style.display = 'none';
-    if (passwordCallback) passwordCallback(null);
-  });
-
-  function loadDataForMember(member) {
+  function loadDataForUser() {
     loadingStatus.textContent = "処理中...";
-    const prefix = `${member}_`;
+    const prefix = `${userName}_`;
     fetch(`${gasUrl}?action=list&folder=${folderKeyword}&prefix=${encodeURIComponent(prefix)}`)
       .then(res => res.json())
       .then(data => {
-        const inputLines = allInputLines;
         if (data.result === "success" && data.files.length > 0) {
           isNewFile = false;
           const latest = data.files.sort((a, b) => b.localeCompare(a))[0];
@@ -342,7 +168,7 @@
               openPasswordModal("回答済です。内容の確認 or 修正にはパスワードを入力してください。", pw => {
                 if (pw === null) { loadingStatus.textContent = ""; return; }
                 currentPassword = savedPassword;
-                const merged = mergeInputAndOutput(inputLines, outputLines);
+                const merged = mergeInputAndOutput(allInputLines, outputLines);
                 loadGridFromData(merged);
                 exportBtn.style.display = 'inline-block';
                 loadingStatus.textContent = "";
@@ -353,16 +179,11 @@
           openPasswordModal("新規作成です。3桁のパスワードを入力してください。", pw => {
             if (pw === null) { loadingStatus.textContent = ""; return; }
             currentPassword = pw;
-            const ym = parseCSVLine(inputLines[1]);
-            year = ym[1];
-            month = ym[2];
-            targetDateSpan.textContent = `対象：${year}年${month}月`;
-
             const merged = [
-              inputLines[2],
-              inputLines[3],
-              inputLines[4],
-              ...inputLines.slice(5)
+              allInputLines[1],
+              allInputLines[2],
+              allInputLines[3],
+              ...allInputLines.slice(4)
             ];
             loadGridFromData(merged);
             exportBtn.style.display = 'inline-block';
@@ -376,61 +197,92 @@
       });
   }
 
-  memberSelect.addEventListener('change', () => {
-    loadDataForMember(memberSelect.value);
-  });
+  function mergeInputAndOutput(inputLines, outputLines) {
+    const merged = [...inputLines];
+    for (let i = 0; i < outputLines.length; i++) {
+      if (i < merged.length) {
+        merged[i] = outputLines[i];
+      }
+    }
+    return merged;
+  }
+
+  function loadGridFromData(lines) {
+    grid.innerHTML = '';
+    cellRefs = [];
+    lines.forEach((line, rowIndex) => {
+      const cols = parseCSVLine(line);
+      cols.forEach((col, colIndex) => {
+        const cell = document.createElement('div');
+        cell.textContent = col;
+        if (rowIndex > 2 && colIndex > 0) {
+          cell.classList.add('editable');
+          cell.addEventListener('click', () => {
+            cell.classList.toggle('selected');
+          });
+        }
+        grid.appendChild(cell);
+      });
+    });
+    grid.style.gridTemplateColumns = `repeat(${parseCSVLine(lines[0]).length}, auto)`;
+  }
 
   exportBtn.addEventListener('click', () => {
-    loadingStatus.textContent = "処理中...";
-    let csv = `回答者,${memberSelect.value},${currentPassword}\n年月,${year},${month}\n`;
-    const rowCount = cellRefs.length;
-    const colCount = 32;
-    for (let r = 0; r < rowCount; r++) {
-      const row = [];
-      for (let c = 0; c < colCount; c++) {
-        if (r < 3) {
-          row.push(cellRefs[r][c].textContent);
-        } else {
-          if (cellRefs[r][c].classList.contains("highlight-red")) row.push('R');
-          else if (cellRefs[r][c].classList.contains("highlight-gray")) row.push('G');
-          else row.push('');
-        }
-      }
-      csv += row.join(',') + '\n';
+    const updatedLines = [];
+    const gridCells = Array.from(grid.children);
+    const colCount = parseCSVLine(allInputLines[0]).length;
+    for (let i = 0; i < gridCells.length; i += colCount) {
+      const rowCells = gridCells.slice(i, i + colCount);
+      const row = rowCells.map(c => (c.classList.contains('selected') ? '◯' : c.textContent)).join(',');
+      updatedLines.push(row);
     }
 
-    const member = memberSelect.value.replace(/ /g, '_');
-    const targetYm = `${year}${month}`;
-    const now = new Date();
-    const yyyymmdd = now.getFullYear().toString() +
-                     String(now.getMonth() + 1).padStart(2, '0') +
-                     String(now.getDate()).padStart(2, '0');
-    const hhmmss = String(now.getHours()).padStart(2, '0') +
-                   String(now.getMinutes()).padStart(2, '0') +
-                   String(now.getSeconds()).padStart(2, '0');
-    const filename = `${member}_${targetYm}_${yyyymmdd}_${hhmmss}作成.txt`;
+    const fileName = `${userName}_${year}${month}.csv`;
+    const content = [`header,${year},${month},${currentPassword}`, ...updatedLines].join('\n');
 
-    fetch(`${gasUrl}?folder=${folderKeyword}&filename=${encodeURIComponent(filename)}`, {
+    fetch(`${gasUrl}?action=write&folder=${folderKeyword}&file=${encodeURIComponent(fileName)}`, {
       method: 'POST',
-      body: csv,
-      headers: { 'Content-Type': 'text/plain' }
+      body: content
     })
-    .then(res => res.json())
-    .then(data => {
-      if (data.result === 'success') {
-        showMessage(`回答内容を保存しました！\nファイル名：${filename}`, 'success');
-      } else {
-        showMessage("保存エラー：" + data.message, 'error');
-      }
-      loadingStatus.textContent = "";
-    })
-    .catch(err => {
-      showMessage("通信エラー：" + err.message, 'error');
-      loadingStatus.textContent = "";
-    });
+    .then(res => res.text())
+    .then(msg => showMessage("回答を提出しました！"))
+    .catch(err => showMessage("提出に失敗しました: " + err.message, 'error'));
+  });
+
+  function openPasswordModal(prompt, callback, savedPassword = '') {
+    passwordPrompt.textContent = prompt;
+    passwordInput.value = '';
+    passwordError.style.display = 'none';
+    passwordModal.style.display = 'flex';
+    passwordInput.focus();
+    savedPasswordForCheck = savedPassword;
+    passwordCallback = callback;
+  }
+
+  passwordOkBtn.addEventListener('click', () => {
+    const pw = passwordInput.value.trim();
+    if (!pw) return;
+    if (savedPasswordForCheck && pw !== savedPasswordForCheck) {
+      passwordError.style.display = 'block';
+      return;
+    }
+    passwordModal.style.display = 'none';
+    passwordCallback(pw);
+  });
+
+  passwordCancelBtn.addEventListener('click', () => {
+    passwordModal.style.display = 'none';
+    passwordCallback(null);
   });
 
   window.onload = initAllData;
+</script>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const userName = localStorage.getItem("userName") || "不明なユーザー";
+    const disp = document.getElementById("userNameDisplay");
+    if (disp) disp.textContent = `回答者：${userName}`;
+  });
 </script>
 </body>
 </html>
