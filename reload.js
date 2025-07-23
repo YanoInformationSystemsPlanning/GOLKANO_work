@@ -18,3 +18,12 @@ window.addEventListener('pageshow', (event) => {
 window.addEventListener('beforeunload', () => {
   sessionStorage.setItem('previousPage', window.location.pathname);
 });
+
+// リンクやボタンクリック時に現在ページを記録
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('a, button').forEach(el => {
+    el.addEventListener('click', () => {
+      sessionStorage.setItem('previousPage', window.location.pathname);
+    });
+  });
+});
