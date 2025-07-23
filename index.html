@@ -80,10 +80,14 @@
       font-weight: bold;
       line-height: 1.5em;
     }
+    #errorOkButton {
+      margin-top: 10px;
+      background-color: #d9534f;
+    }
   </style>
 </head>
 <body>
-  <div class="version-label">Ver.1 Rev.1</div>
+  <div class="version-label">Ver.1 Rev.2</div>
   <div class="header-area">
     <img src="GOLKANO.ロゴ.png" alt="GOLKANO ロゴ" class="logo">
     <div id="loginTitle">ログイン</div>
@@ -92,8 +96,8 @@
   <div class="login-container">
     <input type="text" id="inputId" placeholder="ID">
     <input type="password" id="inputPw" placeholder="パスワード">
-    <button onclick="checkCredentials()">ログイン</button>
-    <div id="loginError">ID or PW が正しくありません。再入力してください。</div>
+    <button id="loginBtn" onclick="checkCredentials()">ログイン</button>
+    <div id="loginError"></div>
   </div>
 
   <script>
@@ -108,7 +112,7 @@
         const url = `${gasUrl}?action=read&folder=${folderKeyword}&file=${fileName}`;
         const res = await fetch(url);
         const text = await res.text();
-        idPwPairs = text.split(/\r?\n/)
+        idPwPairs = text.split(/\\r?\\n/)
                         .filter(line => line.includes(','))
                         .map(line => line.split(',').map(s => s.trim()));
       } catch (e) {
@@ -116,26 +120,49 @@
       }
     }
 
+    function disableInputs(disable) {
+      document.getElementById("inputId").disabled = disable;
+      document.getElementById("inputPw").disabled = disable;
+      document.getElementById("loginBtn").disabled = disable;
+    }
+
+    function showError(msg) {
+      const loginError = document.getElementById("loginError");
+      loginError.innerHTML = msg + "<br><button id='errorOkButton' onclick='resetError()'>OK</button>";
+      loginError.style.display = "block";
+      disableInputs(true);
+    }
+
+    function resetError() {
+      const loginError = document.getElementById("loginError");
+      loginError.style.display = "none";
+      document.getElementById("inputId").value = "";
+      document.getElementById("inputPw").value = "";
+      disableInputs(false);
+      document.getElementById("inputId").focus();
+    }
+
     function checkCredentials() {
       const inputId = document.getElementById("inputId").value.trim();
       const inputPw = document.getElementById("inputPw").value.trim();
-      const loginError = document.getElementById("loginError");
-      loginError.style.display = "none";
 
       if (!inputId || !inputPw) {
-        loginError.textContent = "IDとPWを入力してください。";
-        loginError.style.display = "block";
+        showError("IDとPWを入力してください。");
         return;
       }
 
       // キャッシュ済みデータで判定
-      const match = idPwPairs.some(([name, id, pw]) => id === inputId && pw === inputPw);
+      const match = idPwPairs.some(parts => {
+        if (parts.length >= 3) {
+          return parts[1] === inputId && parts[2] === inputPw;
+        }
+        return false;
+      });
 
       if (match) {
         window.location.href = "top_menu.html";
       } else {
-        loginError.textContent = "ID or PW が正しくありません。再入力してください。";
-        loginError.style.display = "block";
+        showError("ID or PW が正しくありません。再入力してください。");
       }
     }
 
