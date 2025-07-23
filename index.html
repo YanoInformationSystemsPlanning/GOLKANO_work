@@ -30,7 +30,7 @@
       flex-wrap: nowrap;
     }
     .logo {
-      height: 1.5em; /* ログイン文字に近い高さに固定 */
+      height: 1.5em; /* ログイン文字に近い高さ */
       width: auto;
       flex-shrink: 0;
     }
@@ -75,6 +75,15 @@
       margin-top: 10px;
       display: none;
     }
+    /* エラー表示アニメーション */
+    .flash {
+      animation: flash 0.3s ease;
+    }
+    @keyframes flash {
+      0% { opacity: 0; }
+      50% { opacity: 1; }
+      100% { opacity: 1; }
+    }
     #loginTitle {
       font-size: 1.5em;
       font-weight: bold;
@@ -83,7 +92,7 @@
   </style>
 </head>
 <body>
-  <div class="version-label">Ver.1 Rev.1</div>
+  <div class="version-label">Ver.1 Rev.2</div>
   <div class="header-area">
     <img src="GOLKANO.ロゴ.png" alt="GOLKANO ロゴ" class="logo">
     <div id="loginTitle">ログイン</div>
@@ -102,13 +111,12 @@
     const fileName = "id_pw_list.txt";
     let idPwPairs = [];
 
-    // ページロード時にid_pw_list.txtを取得しキャッシュ
     async function preloadIdPwList() {
       try {
         const url = `${gasUrl}?action=read&folder=${folderKeyword}&file=${fileName}`;
         const res = await fetch(url);
         const text = await res.text();
-        idPwPairs = text.split(/\r?\n/)
+        idPwPairs = text.split(/\\r?\\n/)
                         .filter(line => line.includes(','))
                         .map(line => line.split(',').map(s => s.trim()));
       } catch (e) {
@@ -116,26 +124,32 @@
       }
     }
 
+    function showError(msg) {
+      const loginError = document.getElementById("loginError");
+      loginError.textContent = msg;
+      loginError.style.display = "none";
+      void loginError.offsetWidth; // 再描画トリガー
+      loginError.style.display = "block";
+      loginError.classList.remove("flash");
+      void loginError.offsetWidth;
+      loginError.classList.add("flash");
+    }
+
     function checkCredentials() {
       const inputId = document.getElementById("inputId").value.trim();
       const inputPw = document.getElementById("inputPw").value.trim();
-      const loginError = document.getElementById("loginError");
-      loginError.style.display = "none";
 
       if (!inputId || !inputPw) {
-        loginError.textContent = "IDとPWを入力してください。";
-        loginError.style.display = "block";
+        showError("IDとPWを入力してください。");
         return;
       }
 
-      // キャッシュ済みデータで判定
       const match = idPwPairs.some(([name, id, pw]) => id === inputId && pw === inputPw);
 
       if (match) {
         window.location.href = "top_menu.html";
       } else {
-        loginError.textContent = "ID or PW が正しくありません。再入力してください。";
-        loginError.style.display = "block";
+        showError("ID or PW が正しくありません。再入力してください。");
       }
     }
 
