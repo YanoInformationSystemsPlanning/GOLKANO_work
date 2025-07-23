@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GOLKANO ログイン</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background-color: #f5f5f5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .login-container {
+      background-color: white;
+      padding: 20px 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      text-align: center;
+      width: 300px;
+    }
+    h1 {
+      font-size: 1.5em;
+      margin-bottom: 20px;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 5px 0;
+      font-size: 1em;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      font-size: 1em;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    #loginError {
+      color: red;
+      margin-top: 10px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <h1>ログイン</h1>
+    <input type="text" id="inputId" placeholder="ID">
+    <input type="password" id="inputPw" placeholder="パスワード">
+    <button onclick="checkCredentials()">ログイン</button>
+    <div id="loginError">ID or PW が正しくありません。再入力してください。</div>
+  </div>
+
+  <script>
+    const gasUrl = "https://script.google.com/macros/s/AKfycbwsHlPsHK2W1HTeszhzPQY9MgdTE2GYPorehqgP9XWKYpf3VPppvWn4R1-w8k5J5XZCSQ/exec";
+    const folderKeyword = "master_data";
+    const fileName = "id_pw_list.txt";
+
+    async function checkCredentials() {
+      const inputId = document.getElementById("inputId").value.trim();
+      const inputPw = document.getElementById("inputPw").value.trim();
+      const loginError = document.getElementById("loginError");
+      loginError.style.display = "none";
+
+      if (!inputId || !inputPw) {
+        loginError.textContent = "IDとPWを入力してください。";
+        loginError.style.display = "block";
+        return;
+      }
+
+      try {
+        const url = `${gasUrl}?action=read&folder=${folderKeyword}&file=${fileName}`;
+        const res = await fetch(url);
+        const text = await res.text();
+
+        const lines = text.split(/\r?\n/).filter(line => line.includes(','));
+        const match = lines.some(line => {
+          const [name, id, pw] = line.split(',').map(s => s.trim());
+          return id === inputId && pw === inputPw;
+        });
+
+        if (match) {
+          // 認証成功 → top_menu.html へ遷移
+          window.location.href = "top_menu.html";
+        } else {
+          loginError.textContent = "ID or PW が正しくありません。再入力してください。";
+          loginError.style.display = "block";
+        }
+      } catch (err) {
+        loginError.textContent = "ログイン情報の取得に失敗しました。";
+        loginError.style.display = "block";
+      }
+    }
+  </script>
+</body>
+</html>
