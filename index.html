@@ -4,6 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GOLKANO ログイン</title>
+
+  <!-- PWA関連 -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="GOLKANO">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+
   <style>
     body {
       font-family: sans-serif;
@@ -30,7 +38,7 @@
       flex-wrap: nowrap;
     }
     .logo {
-      height: 1.5em; /* ログイン文字に近い高さに固定 */
+      height: 1.5em;
       width: auto;
       flex-shrink: 0;
     }
@@ -155,8 +163,8 @@
       const match = idPwPairs.find(([name, id, pw]) => id === inputId && pw === inputPw);
 
       if (match) {
-        const userName = match[0]; // 操作者の氏名
-        localStorage.setItem("userName", userName); // localStorageに保存
+        const userName = match[0];
+        localStorage.setItem("userName", userName);
         window.location.href = "top_menu.html";
       } else {
         showError("ID or PW が正しくありません。再入力してください。");
