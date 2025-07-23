@@ -8,18 +8,43 @@
     body {
       font-family: sans-serif;
       background-color: #f5f5f5;
+      margin: 0;
+      padding: 0;
+      text-align: center;
+    }
+    .version-label {
+      position: fixed;
+      top: 5px;
+      left: 10px;
+      font-size: 14px;
+      color: #555;
+      font-weight: bold;
+    }
+    .header-area {
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      height: 100vh;
-      margin: 0;
+      margin-top: 40px;
+      gap: 10px;
+      padding: 0 10px;
+      flex-wrap: nowrap;
+    }
+    .logo {
+      max-width: 60%;
+      height: auto;
+      flex-shrink: 1;
+    }
+    @media (max-width: 480px) {
+      .logo {
+        max-width: 50%;
+      }
     }
     .login-container {
       background-color: white;
       padding: 20px 30px;
       border-radius: 8px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin: 20px auto;
       text-align: center;
       width: 300px;
     }
@@ -57,8 +82,13 @@
   </style>
 </head>
 <body>
+  <div class="version-label">Ver.1 Rev.0</div>
+  <div class="header-area">
+    <img src="GOLKANO.ロゴ.png" alt="GOLKANO ロゴ" class="logo">
+    <div id="loginTitle" style="font-size: 1.5em; font-weight: bold;">ログイン</div>
+  </div>
+
   <div class="login-container">
-    <h1>ログイン</h1>
     <input type="text" id="inputId" placeholder="ID">
     <input type="password" id="inputPw" placeholder="パスワード">
     <button onclick="checkCredentials()">ログイン</button>
@@ -94,7 +124,6 @@
         });
 
         if (match) {
-          // 認証成功 → top_menu.html へ遷移
           window.location.href = "top_menu.html";
         } else {
           loginError.textContent = "ID or PW が正しくありません。再入力してください。";
