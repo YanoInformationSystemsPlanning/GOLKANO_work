@@ -23,7 +23,7 @@
       border-bottom: 1px solid #ccc;
       font-size: 14px;
     }
-    select, button {
+    button {
       padding: 2px 6px;
       font-size: 14px;
       cursor: pointer;
@@ -118,7 +118,7 @@
     <button id="exportBtn" style="display:none;">回答提出</button>
   </div>
   <div class="grid" id="grid"></div>
-  <div id="version-label" style="text-align:left; margin:10px;">Ver.1 Rev.2</div>
+  <div id="version-label" style="text-align:left; margin:10px;">Ver.1 Rev.3</div>
 
   <div id="messageBox"></div>
 
@@ -160,7 +160,6 @@
   let passwordCallback = null;
   let savedPasswordForCheck = '';
 
-  // ローカルストレージからユーザー名取得
   const userName = localStorage.getItem("userName") || "未設定";
   memberNameSpan.textContent = userName;
 
@@ -276,11 +275,10 @@
     month = ym[2];
     targetDateSpan.textContent = `対象：${year}年${month}月`;
 
-    merged[0] = inputLines[2];
-    merged[1] = inputLines[3];
-    merged[2] = outputLines[4] || inputLines[4];
-
-    for (let r = 5; r < inputLines.length; r++) {
+    merged[0] = inputLines[1];  // 日付
+    merged[1] = inputLines[2];  // 曜日
+    merged[2] = outputLines[4] || inputLines[3];  // 対応可能
+    for (let r = 4; r < inputLines.length; r++) {
       merged.push(inputLines[r]);
     }
     return merged;
@@ -353,16 +351,16 @@
           openPasswordModal("新規作成です。3桁のパスワードを入力してください。", pw => {
             if (pw === null) { loadingStatus.textContent = ""; return; }
             currentPassword = pw;
-            const ym = parseCSVLine(inputLines[1]);
+            const ym = parseCSVLine(inputLines[0]);
             year = ym[1];
             month = ym[2];
             targetDateSpan.textContent = `対象：${year}年${month}月`;
 
             const merged = [
+              inputLines[1],
               inputLines[2],
               inputLines[3],
-              inputLines[4],
-              ...inputLines.slice(5)
+              ...inputLines.slice(4)
             ];
             loadGridFromData(merged);
             exportBtn.style.display = 'inline-block';
