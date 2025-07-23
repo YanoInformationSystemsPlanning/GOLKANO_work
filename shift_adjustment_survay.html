@@ -118,7 +118,7 @@
     <button id="exportBtn" style="display:none;">回答提出</button>
   </div>
   <div class="grid" id="grid"></div>
-  <div id="version-label" style="text-align:left; margin:10px;">Ver.1 Rev.0</div>
+  <div id="version-label" style="text-align:left; margin:10px;">Ver.1 Rev.1</div>
 
   <div id="messageBox"></div>
 
@@ -147,8 +147,8 @@
   const passwordOkBtn = document.getElementById("passwordOkBtn");
   const passwordCancelBtn = document.getElementById("passwordCancelBtn");
 
-  const gasUrl = "https://script.google.com/macros/s/AKfycbzCYQRN6hg9n8OERx11vJslBCvy0VmgO-nzMIryNO1gUD4Q1wim5srxDPCKsggYsMzf5g/exec";
-  const folderId = "1P9IpgCw1L_cvKjemIpg3ygtOAOUePWZh";
+  const gasUrl = "https://script.google.com/macros/s/AKfycbyecyW2BpBWp_-z2KuWq2lf-c4gXlJVeILV8SlqgA8b3Li79fiM7Dil7WSrTE4FHVS64w/exec";
+  const folderKeyword = "shift_adjustment_survay";
 
   let allInputLines = [];
   let cellRefs = [];
@@ -171,7 +171,7 @@
   }
 
   function initAllData() {
-    fetch(`${gasUrl}?action=read&folder=${folderId}&file=input_data.txt`)
+    fetch(`${gasUrl}?action=read&folder=${folderKeyword}&file=input_data.txt`)
       .then(res => res.text())
       .then(text => {
         allInputLines = text.split('\n').filter(l => l.trim());
@@ -326,14 +326,14 @@
   function loadDataForMember(member) {
     loadingStatus.textContent = "処理中...";
     const prefix = `${member}_`;
-    fetch(`${gasUrl}?action=list&folder=${folderId}&prefix=${encodeURIComponent(prefix)}`)
+    fetch(`${gasUrl}?action=list&folder=${folderKeyword}&prefix=${encodeURIComponent(prefix)}`)
       .then(res => res.json())
       .then(data => {
         const inputLines = allInputLines;
         if (data.result === "success" && data.files.length > 0) {
           isNewFile = false;
           const latest = data.files.sort((a, b) => b.localeCompare(a))[0];
-          fetch(`${gasUrl}?action=read&folder=${folderId}&file=${encodeURIComponent(latest)}`)
+          fetch(`${gasUrl}?action=read&folder=${folderKeyword}&file=${encodeURIComponent(latest)}`)
             .then(res => res.text())
             .then(outputText => {
               const outputLines = outputText.split('\n').filter(l => l.trim());
@@ -410,7 +410,7 @@
                    String(now.getSeconds()).padStart(2, '0');
     const filename = `${member}_${targetYm}_${yyyymmdd}_${hhmmss}作成.txt`;
 
-    fetch(`https://script.google.com/macros/s/AKfycbx3Ir7q8b82MhnlCqwQnmAAJp2IaHY2f0UwBezEQLXHpa_Zo4M8lx__gt2dbLbojTlSuw/exec?folder=${folderId}&filename=${encodeURIComponent(filename)}`, {
+    fetch(`${gasUrl}?folder=${folderKeyword}&filename=${encodeURIComponent(filename)}`, {
       method: 'POST',
       body: csv,
       headers: { 'Content-Type': 'text/plain' }
