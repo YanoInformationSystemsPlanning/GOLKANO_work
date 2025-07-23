@@ -48,10 +48,6 @@
       text-align: center;
       width: 300px;
     }
-    h1 {
-      font-size: 1.5em;
-      margin-bottom: 20px;
-    }
     input {
       width: 100%;
       padding: 10px;
@@ -106,13 +102,14 @@
     const fileName = "id_pw_list.txt";
     let idPwPairs = [];
 
-    // ページロード時にid_pw_list.txtを読み込みキャッシュ
+    // ページロード時にid_pw_list.txtを取得しキャッシュ
     async function preloadIdPwList() {
       try {
         const url = `${gasUrl}?action=read&folder=${folderKeyword}&file=${fileName}`;
         const res = await fetch(url);
         const text = await res.text();
-        idPwPairs = text.split(/\\r?\\n/).filter(line => line.includes(','))
+        idPwPairs = text.split(/\r?\n/)
+                        .filter(line => line.includes(','))
                         .map(line => line.split(',').map(s => s.trim()));
       } catch (e) {
         console.error("ID/PWリストの取得に失敗:", e);
@@ -131,7 +128,7 @@
         return;
       }
 
-      // ローカルキャッシュで判定
+      // キャッシュ済みデータで判定
       const match = idPwPairs.some(([name, id, pw]) => id === inputId && pw === inputPw);
 
       if (match) {
