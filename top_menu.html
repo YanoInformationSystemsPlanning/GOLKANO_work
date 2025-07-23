@@ -38,7 +38,7 @@
       font-size: 18px;
       border: none;
       border-radius: 8px;
-      background-color: #4CAF50;
+      background-color: #4CAF50;  /* デフォルトは緑 */
       color: white;
       cursor: pointer;
       transition: background-color 0.3s;
@@ -98,6 +98,14 @@
       color: red;
       display: none;
       margin-top: 5px;
+    }
+
+    /* 一般利用・管理者利用ボタンだけオレンジに */
+    #userTypeButtons .menu-button {
+      background-color: #FFA500;
+    }
+    #userTypeButtons .menu-button:hover {
+      background-color: #FFB733;
     }
   </style>
 </head>
@@ -187,7 +195,6 @@
       }
     }
 
-    // Ver.? Rev.? の高さを基準に余白を追加
     function adjustHeaderMargin() {
       const versionLabel = document.querySelector('.version-label');
       const header = document.querySelector('.header-area');
