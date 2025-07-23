@@ -112,6 +112,19 @@
   </style>
 </head>
 <body>
+  <!-- 戻るボタン -->
+  <button onclick="goPreviousPage()">前の画面に戻る</button>
+  <script>
+    function goPreviousPage() {
+      const previous = sessionStorage.getItem('previousPage');
+      if (previous) {
+        location.href = previous;
+      } else {
+        location.href = 'index.html';
+      }
+    }
+  </script>
+
   <div class="header-bar">
     <span>回答者：</span>
     <span id="memberName"></span>
