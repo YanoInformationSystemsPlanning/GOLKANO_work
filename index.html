@@ -30,7 +30,7 @@
       flex-wrap: nowrap;
     }
     .logo {
-      height: 1.5em; /* ログイン文字に近い高さ */
+      height: 1.5em;
       width: auto;
       flex-shrink: 0;
     }
@@ -48,7 +48,7 @@
       text-align: center;
       width: 300px;
     }
-    input {
+    input, button {
       width: 100%;
       padding: 10px;
       margin: 5px 0;
@@ -57,14 +57,9 @@
       border-radius: 4px;
     }
     button {
-      width: 100%;
-      padding: 10px;
-      margin-top: 10px;
-      font-size: 1em;
       background-color: #4CAF50;
       color: white;
       border: none;
-      border-radius: 4px;
       cursor: pointer;
     }
     button:hover {
@@ -75,19 +70,14 @@
       margin-top: 10px;
       display: none;
     }
-    /* エラー表示アニメーション */
-    .flash {
-      animation: flash 0.3s ease;
-    }
-    @keyframes flash {
-      0% { opacity: 0; }
-      50% { opacity: 1; }
-      100% { opacity: 1; }
-    }
     #loginTitle {
       font-size: 1.5em;
       font-weight: bold;
       line-height: 1.5em;
+    }
+    #errorOkButton {
+      background-color: #d9534f;
+      margin-top: 10px;
     }
   </style>
 </head>
@@ -101,8 +91,8 @@
   <div class="login-container">
     <input type="text" id="inputId" placeholder="ID">
     <input type="password" id="inputPw" placeholder="パスワード">
-    <button onclick="checkCredentials()">ログイン</button>
-    <div id="loginError">ID or PW が正しくありません。再入力してください。</div>
+    <button id="loginBtn" onclick="checkCredentials()">ログイン</button>
+    <div id="loginError"></div>
   </div>
 
   <script>
@@ -116,8 +106,7 @@
         const url = `${gasUrl}?action=read&folder=${folderKeyword}&file=${fileName}`;
         const res = await fetch(url);
         const text = await res.text();
-        idPwPairs = text.split(/\\r?\\n/)
-                        .filter(line => line.includes(','))
+        idPwPairs = text.split(/\\r?\\n/).filter(line => line.includes(','))
                         .map(line => line.split(',').map(s => s.trim()));
       } catch (e) {
         console.error("ID/PWリストの取得に失敗:", e);
@@ -126,13 +115,32 @@
 
     function showError(msg) {
       const loginError = document.getElementById("loginError");
-      loginError.textContent = msg;
-      loginError.style.display = "none";
-      void loginError.offsetWidth; // 再描画トリガー
+      const loginBtn = document.getElementById("loginBtn");
+      const inputId = document.getElementById("inputId");
+      const inputPw = document.getElementById("inputPw");
+
+      // 入力欄とログインボタンを無効化
+      inputId.disabled = true;
+      inputPw.disabled = true;
+      loginBtn.disabled = true;
+
+      loginError.innerHTML = msg + "<br><button id='errorOkButton' onclick='resetError()'>OK</button>";
       loginError.style.display = "block";
-      loginError.classList.remove("flash");
-      void loginError.offsetWidth;
-      loginError.classList.add("flash");
+    }
+
+    function resetError() {
+      const loginError = document.getElementById("loginError");
+      const loginBtn = document.getElementById("loginBtn");
+      const inputId = document.getElementById("inputId");
+      const inputPw = document.getElementById("inputPw");
+
+      loginError.style.display = "none";
+      inputId.disabled = false;
+      inputPw.disabled = false;
+      loginBtn.disabled = false;
+
+      inputPw.value = "";
+      inputId.focus();
     }
 
     function checkCredentials() {
