@@ -2,14 +2,27 @@
 
 // ページ復帰時の処理
 window.addEventListener('pageshow', (event) => {
-  if (event.persisted || performance.getEntriesByType("navigation")[0].type === "back_forward") {
-    const previousPage = sessionStorage.getItem('previousPage');
-    if (previousPage) {
-      console.log(`PWAキャッシュ復帰 → ${previousPage} へ移動`);
-      window.location.href = previousPage;
-    } else {
-      console.log("PWAキャッシュ復帰 → index.html へ移動");
-      window.location.href = "index.html";
+  const path = window.location.pathname;
+  const isIndex = path.endsWith("index.html") || path === "/" || path === "";
+
+  if (isIndex) {
+    // index.html の場合は必ず初期状態にリロード
+    if (event.persisted || performance.getEntriesByType("navigation")[0].type === "back_forward") {
+      console.log("PWAキャッシュ復帰 → index.html をリロード");
+      window.location.reload();
+      return;
+    }
+  } else {
+    // その他のページは従来通りの動作
+    if (event.persisted || performance.getEntriesByType("navigation")[0].type === "back_forward") {
+      const previousPage = sessionStorage.getItem('previousPage');
+      if (previousPage) {
+        console.log(`PWAキャッシュ復帰 → ${previousPage} へ移動`);
+        window.location.href = previousPage;
+      } else {
+        console.log("PWAキャッシュ復帰 → index.html へ移動");
+        window.location.href = "index.html";
+      }
     }
   }
 });
