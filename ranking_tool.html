@@ -35,6 +35,27 @@
       cursor: pointer; margin-bottom: 0.5em;
     }
     #result-area { text-align: left; margin-left: 1.0em; display: inline-block; }
+
+    /* スピナー用CSS */
+    .loading-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: bold;
+      color: red;
+    }
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid red;
+      border-radius: 50%;
+      width: 14px;
+      height: 14px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
   </style>
 </head>
 <body>
@@ -50,7 +71,12 @@
     </div>
 
     <h2>候補者一覧</h2>
-    <div id="select-area">読み込み中...</div>
+    <div id="select-area">
+      <div class="loading-status">
+        <span>読み込み中...</span>
+        <span class="spinner"></span>
+      </div>
+    </div>
     <button id="rank-button" onclick="generateRanking()">順位決め</button>
     <div style="width: 100%;"></div>
     <div id="result-area" style="margin-top: 0;"></div>
@@ -59,7 +85,7 @@
   <script>
     let CANDIDATES = [];
     const gasUrl = 'https://script.google.com/macros/s/AKfycbyecyW2BpBWp_-z2KuWq2lf-c4gXlJVeILV8SlqgA8b3Li79fiM7Dil7WSrTE4FHVS64w/exec';
-    const folderKeyword = 'ranking_tool';  // フォルダIDの代わりにキーワード
+    const folderKeyword = 'ranking_tool';
     const inputFile = 'input_data.txt';
 
     // 起動時に候補者を1回だけ取得
@@ -70,7 +96,6 @@
         const response = await fetch(url);
         if (!response.ok) throw new Error(`HTTPエラー ${response.status}`);
         const text = await response.text();
-        // 1行目のみカンマ分割
         const firstLine = text.split(/\r?\n/)[0];
         CANDIDATES = firstLine.split(',').slice(1).map(name => name.trim()).filter(name => name);
         renderCandidates();
@@ -100,20 +125,15 @@
       const resultArea = document.getElementById("result-area");
       const rankBtn = document.getElementById("rank-button");
 
-      // ボタン無効化 & 処理中表示
       rankBtn.disabled = true;
-      resultArea.innerHTML = `<div style="font-size:1.2em; color:#007bff;">処理中です... <span id="loadingDots"></span></div>`;
+      resultArea.innerHTML = `
+        <div class="loading-status">
+          <span>処理中...</span>
+          <span class="spinner"></span>
+        </div>
+      `;
 
-      // ドットアニメーション
-      let dots = 0;
-      const dotInterval = setInterval(() => {
-        dots = (dots + 1) % 4;
-        document.getElementById("loadingDots").textContent = ".".repeat(dots);
-      }, 500);
-
-      // 3秒後に結果表示
       setTimeout(() => {
-        clearInterval(dotInterval);
         showRankingResult();
         rankBtn.disabled = false;
       }, 3000);
@@ -142,7 +162,6 @@
       resultArea.innerHTML += `<div style="margin-top:0.5em; font-size:1em;">実施：${formatted}</div>`;
     }
 
-    // 配列シャッフル
     function shuffle(array) {
       for (let i = array.length - 1; i > 0; i--) {
         const r = Math.floor(Math.random() * (i + 1));
@@ -151,12 +170,11 @@
       return array;
     }
 
-    // Ver.? Rev.? の高さを考慮して余白調整
     function adjustContentMargin() {
       const version = document.getElementById('version-label');
       const wrapper = document.getElementById('content-wrapper');
       const height = version.offsetHeight;
-      wrapper.style.marginTop = (height * 1.2) + 'px';  // 高さ + 20%
+      wrapper.style.marginTop = (height * 1.2) + 'px';
     }
 
     window.onload = function() {
