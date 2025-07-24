@@ -29,7 +29,26 @@
       font-size: 14px;
       cursor: pointer;
     }
-    .status { font-weight: bold; color: red; }
+    .status {
+      font-weight: bold;
+      color: red; /* 赤文字 */
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid red;
+      border-radius: 50%;
+      width: 14px;
+      height: 14px;
+      animation: spin 1s linear infinite;
+      display: none; /* 初期は非表示 */
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
     .grid {
       display: grid;
       grid-template-columns: 110px repeat(31, 36px);
@@ -119,7 +138,10 @@
     <span>回答者：</span>
     <span id="memberName"></span>
     <span id="targetDate"></span>
-    <span id="loadingStatus" class="status"></span>
+    <span id="loadingStatus" class="status">
+      <span id="loadingText"></span>
+      <span class="spinner" id="loadingSpinner"></span>
+    </span>
     <button id="exportBtn" style="display:none;">回答提出</button>
   </div>
   <div class="grid" id="grid"></div>
@@ -148,9 +170,11 @@
   const grid = document.getElementById("grid");
   const memberNameSpan = document.getElementById("memberName");
   const targetDateSpan = document.getElementById("targetDate");
-  const loadingStatus = document.getElementById("loadingStatus");
   const exportBtn = document.getElementById("exportBtn");
   const messageBox = document.getElementById("messageBox");
+
+  const loadingText = document.getElementById("loadingText");
+  const loadingSpinner = document.getElementById("loadingSpinner");
 
   const passwordModal = document.getElementById("passwordModal");
   const passwordPrompt = document.getElementById("passwordPrompt");
@@ -177,8 +201,18 @@
 
   // ページDOM読み込み直後に「処理中」を表示
   document.addEventListener("DOMContentLoaded", () => {
-    loadingStatus.textContent = "処理中...";
+    showLoading("処理中...");
   });
+
+  function showLoading(msg) {
+    loadingText.textContent = msg;
+    loadingSpinner.style.display = "inline-block";
+  }
+
+  function hideLoading() {
+    loadingText.textContent = "";
+    loadingSpinner.style.display = "none";
+  }
 
   function showMessage(msg, type = 'info') {
     messageBox.className = `show ${type}`;
@@ -191,14 +225,17 @@
   }
 
   function initAllData() {
-    loadingStatus.textContent = "処理中...";
+    showLoading("処理中...");
     fetch(`${gasUrl}?action=read&folder=${folderKeyword}&file=input_data.txt`)
       .then(res => res.text())
       .then(text => {
         allInputLines = text.split('\n').filter(l => l.trim());
         loadDataForMember(userName);
       })
-      .catch(err => showMessage("ヘッダ情報の読み込みに失敗しました。\n" + err.message, 'error'));
+      .catch(err => {
+        showMessage("ヘッダ情報の読み込みに失敗しました。\n" + err.message, 'error');
+        hideLoading();
+      });
   }
 
   function loadGridFromData(lines) {
@@ -249,6 +286,7 @@
     }
     grid.appendChild(fragment);
     applyHighlight();
+    hideLoading();
   }
 
   function handleCellClick(rowIndex, colIndex, cell) {
@@ -340,7 +378,7 @@
   });
 
   function loadDataForMember(member) {
-    loadingStatus.textContent = "処理中...";
+    showLoading("処理中...");
     const prefix = `${member}_`;
     fetch(`${gasUrl}?action=list&folder=${folderKeyword}&prefix=${encodeURIComponent(prefix)}`)
       .then(res => res.json())
@@ -356,18 +394,17 @@
               const header = parseCSVLine(outputLines[0]);
               const savedPassword = header[2] || '';
               openPasswordModal("回答済です。内容の確認 or 修正にはパスワードを入力してください。", pw => {
-                if (pw === null) { loadingStatus.textContent = ""; return; }
+                if (pw === null) { hideLoading(); return; }
                 currentPassword = savedPassword;
                 const merged = mergeInputAndOutput(inputLines, outputLines);
                 loadGridFromData(merged);
                 exportBtn.style.display = 'inline-block';
-                loadingStatus.textContent = "";
               }, savedPassword);
             });
         } else {
           isNewFile = true;
           openPasswordModal("新規作成です。3桁のパスワードを入力してください。", pw => {
-            if (pw === null) { loadingStatus.textContent = ""; return; }
+            if (pw === null) { hideLoading(); return; }
             currentPassword = pw;
             const ym = parseCSVLine(inputLines[0]);
             year = ym[1];
@@ -382,18 +419,17 @@
             ];
             loadGridFromData(merged);
             exportBtn.style.display = 'inline-block';
-            loadingStatus.textContent = "";
           });
         }
       })
       .catch(err => {
         showMessage("ファイルチェックに失敗しました。\n" + err.message, 'error');
-        loadingStatus.textContent = "";
+        hideLoading();
       });
   }
 
   exportBtn.addEventListener('click', () => {
-    loadingStatus.textContent = "処理中...";
+    showLoading("処理中...");
     let csv = `回答者,${userName},${currentPassword}\n年月,${year},${month}\n`;
     const rowCount = cellRefs.length;
     const colCount = 32;
@@ -434,11 +470,11 @@
       } else {
         showMessage("保存エラー：" + data.message, 'error');
       }
-      loadingStatus.textContent = "";
+      hideLoading();
     })
     .catch(err => {
       showMessage("通信エラー：" + err.message, 'error');
-      loadingStatus.textContent = "";
+      hideLoading();
     });
   });
 
