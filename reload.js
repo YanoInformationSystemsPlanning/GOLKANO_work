@@ -6,14 +6,15 @@ window.addEventListener('pageshow', (event) => {
   const isIndex = path.endsWith("index.html") || path === "/" || path === "";
 
   if (isIndex) {
-    // index.html の場合は必ず初期状態にリロード
+    // index.html の場合、必ず初期状態にするため強制リロード
     if (event.persisted || performance.getEntriesByType("navigation")[0].type === "back_forward") {
-      console.log("PWAキャッシュ復帰 → index.html をリロード");
-      window.location.reload();
+      console.log("PWAキャッシュ復帰 → index.html を強制リロード");
+      const url = window.location.origin + window.location.pathname + '?t=' + new Date().getTime();
+      window.location.replace(url);  // キャッシュ無効化パラメータ付きでリロード
       return;
     }
   } else {
-    // その他のページは従来通りの動作
+    // その他のページは従来通り
     if (event.persisted || performance.getEntriesByType("navigation")[0].type === "back_forward") {
       const previousPage = sessionStorage.getItem('previousPage');
       if (previousPage) {
