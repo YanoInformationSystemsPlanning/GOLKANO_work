@@ -16,7 +16,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-top: 20px; /* JSで動的に上書き */
+      margin-top: 20px;
       gap: 10px;
       padding: 0 10px;
       flex-wrap: nowrap;
@@ -38,7 +38,7 @@
       font-size: 18px;
       border: none;
       border-radius: 8px;
-      background-color: #4CAF50;  /* デフォルトは緑 */
+      background-color: #4CAF50;
       color: white;
       cursor: pointer;
       transition: background-color 0.3s;
@@ -48,7 +48,7 @@
       background-color: #45a049;
     }
     .admin-button {
-      background-color: #d9534f; /* 赤背景 */
+      background-color: #d9534f;
     }
     .version-label {
       position: fixed;
@@ -64,8 +64,16 @@
       color: #333;
       white-space: nowrap;
     }
-
-    /* パスワードモーダル */
+    #topButton {
+      margin-top: 10px;
+      padding: 8px 16px;
+      font-size: 14px;
+      background-color: #2196F3;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
     #passwordModal {
       position: fixed;
       top: 0; left: 0; width: 100%; height: 100%;
@@ -99,8 +107,6 @@
       display: none;
       margin-top: 5px;
     }
-
-    /* 一般利用・管理者利用ボタンだけオレンジに */
     #userTypeButtons .menu-button {
       background-color: #FFA500;
     }
@@ -110,38 +116,22 @@
   </style>
 </head>
 <body>
-  <!-- 戻るボタン -->
-  <button onclick="goPreviousPage()">前の画面に戻る</button>
-  <script>
-    function goPreviousPage() {
-      const previous = sessionStorage.getItem('previousPage');
-      if (previous) {
-        location.href = previous;
-      } else {
-        location.href = 'index.html';
-      }
-    }
-  </script>
+  <button id="topButton" onclick="goTop()">ログインに戻る</button>
 
-  <!-- バージョン表示 -->
-  <div class="version-label">Ver.1 Rev.0</div>
+  <div class="version-label">Ver.1 Rev.1</div>
 
-  <!-- ヘッダー領域（ロゴ + 利用種別） -->
   <div class="header-area">
     <img src="GOLKANO.ロゴ.png" alt="GOLKANO ロゴ" class="logo">
     <div id="userTypeLabel">利用種別選択</div>
   </div>
 
-  <!-- 利用区分ボタン -->
   <div id="userTypeButtons">
     <button class="menu-button" onclick="showGeneralMenu()">一般利用</button>
     <button class="menu-button" onclick="openPasswordModal()">管理者利用</button>
   </div>
 
-  <!-- メニュー表示領域 -->
   <div id="menuArea"></div>
 
-  <!-- パスワード入力モーダル -->
   <div id="passwordModal">
     <div class="modal-content">
       <div>パスワードを入力してください</div>
@@ -157,6 +147,20 @@
     const passwordInput = document.getElementById("passwordInput");
     const passwordError = document.getElementById("passwordError");
     const userTypeLabel = document.getElementById("userTypeLabel");
+    const topButton = document.getElementById("topButton");
+
+    function goTop() {
+      location.href = "index.html";
+    }
+
+    function setTopButtonText(text) {
+      topButton.textContent = text;
+      if (text === "トップに戻る") {
+        topButton.onclick = () => location.href = "top_menu.html";
+      } else {
+        topButton.onclick = () => location.href = "index.html";
+      }
+    }
 
     function removeUserTypeButtons() {
       const btns = document.getElementById('userTypeButtons');
@@ -166,6 +170,7 @@
     function showGeneralMenu() {
       removeUserTypeButtons();
       userTypeLabel.textContent = '一般利用';
+      setTopButtonText("トップに戻る");
       const area = document.getElementById('menuArea');
       area.innerHTML = `
         <button class="menu-button" onclick="location.href='shift_adjustment_survay.html'">シフト調整</button>
@@ -195,6 +200,7 @@
         passwordModal.style.display = 'none';
         removeUserTypeButtons();
         userTypeLabel.textContent = '管理者利用';
+        setTopButtonText("トップに戻る");
         const area = document.getElementById('menuArea');
         area.innerHTML = `
           <button class="menu-button" onclick="location.href='shift_adjustment_survay.html'">シフト調整</button>
@@ -208,17 +214,10 @@
       }
     }
 
-    function adjustHeaderMargin() {
-      const versionLabel = document.querySelector('.version-label');
-      const header = document.querySelector('.header-area');
-      const height = versionLabel.offsetHeight;
-      header.style.marginTop = (height * 1.2) + 'px'; // 高さ + 20%
-    }
-
     window.onload = function() {
-      adjustHeaderMargin();
+      setTopButtonText("ログインに戻る");
     };
   </script>
-  <script src="reload.js"></script> <!-- PWAキャッシュ復帰時のリロード処理 -->
+  <script src="reload.js"></script>
 </body>
 </html>
