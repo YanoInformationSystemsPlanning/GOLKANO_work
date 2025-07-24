@@ -5,27 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GOLKANO ログイン</title>
 
-  <!-- キャッシュ無効化 -->
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <meta http-equiv="Pragma" content="no-cache" />
-  <meta http-equiv="Expires" content="0" />
-
   <!-- PWA関連 -->
   <link rel="manifest" href="manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="GOLKANO">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-
-  <!-- PWAキャッシュ復元防止用スクリプト -->
-  <script>
-    (function() {
-      if (!window.location.href.includes('nocache=')) {
-        const sep = window.location.href.includes('?') ? '&' : '?';
-        window.location.replace(window.location.pathname + sep + 'nocache=' + Date.now());
-      }
-    })();
-  </script>
 
   <style>
     body {
@@ -129,7 +114,6 @@
     const fileName = "id_pw_list.txt";
     let idPwPairs = [];
 
-    // ページロード時にid_pw_list.txtを取得しキャッシュ
     async function preloadIdPwList() {
       try {
         const url = `${gasUrl}?action=read&folder=${folderKeyword}&file=${fileName}`;
@@ -174,7 +158,6 @@
         return;
       }
 
-      // キャッシュ済みデータで判定
       const match = idPwPairs.find(([name, id, pw]) => id === inputId && pw === inputPw);
 
       if (match) {
@@ -188,6 +171,5 @@
 
     window.onload = preloadIdPwList;
   </script>
-  <!-- reload.jsはtop_menu専用化したため、index.htmlでは削除 -->
 </body>
 </html>
