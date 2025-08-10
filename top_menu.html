@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Cache-Control" content="no-store" />
-  <title>GOLKANO トップメニュー</title>
+  <title>GOLKANO 管理者：優先順位決め</title>
 
-  <!-- PWA関連 -->
+  <!-- PWA関連（現状維持） -->
   <link rel="manifest" href="manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -30,35 +30,24 @@
       padding: 0 10px;
       flex-wrap: nowrap;
     }
-    .logo {
-      height: 1.5em;
-      width: auto;
-      flex-shrink: 0;
-    }
-    @media (max-width: 480px) {
-      .logo {
-        height: 1.2em;
-      }
-    }
+    .logo { height: 1.5em; width: auto; flex-shrink: 0; }
+    @media (max-width: 480px) { .logo { height: 1.2em; } }
+
     .menu-button {
       display: block;
-      margin: 15px auto;
+      margin: 30px auto 0;
       padding: 15px 30px;
       font-size: 18px;
       border: none;
       border-radius: 8px;
-      background-color: #4CAF50;
+      background-color: #d9534f; /* 管理者色を流用 */
       color: white;
       cursor: pointer;
       transition: background-color 0.3s;
-      width: 250px;
+      width: 260px;
     }
-    .menu-button:hover {
-      background-color: #45a049;
-    }
-    .admin-button {
-      background-color: #d9534f;
-    }
+    .menu-button:hover { background-color: #c64541; }
+
     .version-label {
       position: fixed;
       top: 5px;
@@ -83,149 +72,30 @@
       border-radius: 5px;
       cursor: pointer;
     }
-    #passwordModal {
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 10000;
-    }
-    #passwordModal .modal-content {
-      background: #fff;
-      padding: 20px;
-      border-radius: 5px;
-      text-align: center;
-      width: 250px;
-    }
-    #passwordModal input {
-      width: 100%;
-      padding: 5px;
-      margin-top: 10px;
-      font-size: 16px;
-    }
-    #passwordModal button {
-      margin-top: 10px;
-      padding: 5px 10px;
-      font-size: 14px;
-      margin-right: 5px;
-    }
-    #passwordError {
-      color: red;
-      display: none;
-      margin-top: 5px;
-    }
-    #userTypeButtons .menu-button {
-      background-color: #FFA500;
-    }
-    #userTypeButtons .menu-button:hover {
-      background-color: #FFB733;
-    }
   </style>
 </head>
 <body>
-  <button id="topButton" onclick="goTop()">ログインに戻る</button>
+  <!-- ログイン処理は従来どおり。戻る先だけ保持 -->
+  <button id="topButton" onclick="location.href='index.html'">ログインに戻る</button>
 
   <div class="version-label">Ver.0 Rev.724</div>
 
   <div class="header-area">
     <img src="GOLKANO.ロゴ.png" alt="GOLKANO ロゴ" class="logo">
-    <div id="userTypeLabel">トップメニュー</div>
+    <div id="userTypeLabel">管理者利用</div>
   </div>
 
-  <div id="userTypeButtons">
-    <button class="menu-button" onclick="showGeneralMenu()">一般利用</button>
-    <button class="menu-button" onclick="openPasswordModal()">管理者利用</button>
-  </div>
-
-  <div id="menuArea"></div>
-
-  <div id="passwordModal">
-    <div class="modal-content">
-      <div>パスワードを入力してください</div>
-      <input type="text" id="passwordInput" maxlength="6">
-      <div id="passwordError">パスワードが違います</div>
-      <button onclick="checkAdminPassword()">OK</button>
-      <button onclick="closePasswordModal()">キャンセル</button>
-    </div>
+  <!-- トップメニューは廃止。管理者の「優先順位決め」のみ表示 -->
+  <div id="menuArea">
+    <button class="menu-button" onclick="location.href='ranking_tool.html'">優先順位決め</button>
   </div>
 
   <script>
-    const passwordModal = document.getElementById("passwordModal");
-    const passwordInput = document.getElementById("passwordInput");
-    const passwordError = document.getElementById("passwordError");
-    const userTypeLabel = document.getElementById("userTypeLabel");
-    const topButton = document.getElementById("topButton");
-
-    function goTop() {
-      location.href = "index.html";
-    }
-
-    function setTopButtonText(text) {
-      topButton.textContent = text;
-      if (text === "トップに戻る") {
-        topButton.onclick = () => location.href = "top_menu.html";
-      } else {
-        topButton.onclick = () => location.href = "index.html";
-      }
-    }
-
-    function removeUserTypeButtons() {
-      const btns = document.getElementById('userTypeButtons');
-      if (btns) btns.remove();
-    }
-
-    function showGeneralMenu() {
-      removeUserTypeButtons();
-      userTypeLabel.textContent = '一般利用';
-      setTopButtonText("トップに戻る");
-      const area = document.getElementById('menuArea');
-      area.innerHTML = `
-        <button class="menu-button" onclick="location.href='shift_adjustment_survay.html'">シフト調整</button>
-        <button class="menu-button" onclick="location.href='work_completion_report.html'">業務終了報告</button>
-      `;
-    }
-
-    function openPasswordModal() {
-      passwordError.style.display = 'none';
-      passwordInput.value = '';
-      passwordModal.style.display = 'flex';
-      passwordInput.focus();
-    }
-
-    function closePasswordModal() {
-      passwordModal.style.display = 'none';
-    }
-
-    function checkAdminPassword() {
-      const today = new Date();
-      const mm = String(today.getMonth() + 1).padStart(2, '0');
-      const dd = String(today.getDate()).padStart(2, '0');
-      const expected = ['gk' + mm + dd, 'GK' + mm + dd];
-
-      const input = passwordInput.value.trim();
-      if (expected.includes(input)) {
-        passwordModal.style.display = 'none';
-        removeUserTypeButtons();
-        userTypeLabel.textContent = '管理者利用';
-        setTopButtonText("トップに戻る");
-        const area = document.getElementById('menuArea');
-        area.innerHTML = `
-          <button class="menu-button" onclick="location.href='shift_adjustment_survay.html'">シフト調整</button>
-          <button class="menu-button" onclick="location.href='work_completion_report.html'">業務終了報告</button>
-          <button class="menu-button admin-button" onclick="location.href='ranking_tool.html'">優先順位決め</button>
-        `;
-      } else {
-        passwordError.style.display = 'block';
-        passwordInput.value = '';
-        passwordInput.focus();
-      }
-    }
-
-    window.onload = function() {
-      setTopButtonText("ログインに戻る");
-    };
+    // ここではトップメニューやパスワード関連の処理は一切行わない。
+    // ログイン判定や権限付与は既存の「ログイン処理」で実施されている前提。
+    // 必要なら、ログイン種別に応じてアクセス制御を追加してください。
+    // 例）未認証の場合はログイン画面へ戻す：
+    // if (!sessionStorage.getItem('loggedIn')) location.href = 'index.html';
   </script>
   <script src="reload.js?v=20250724"></script>
 </body>
