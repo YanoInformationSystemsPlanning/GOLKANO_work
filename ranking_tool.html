@@ -14,9 +14,7 @@
       font-size: 0.8em;
       color: #555;
     }
-    #content-wrapper {
-      margin-top: 1em; /* JSで動的に調整 */
-    }
+    #content-wrapper { margin-top: 1em; }
     h2 { margin-bottom: 0.5em; }
     #purpose-area { margin-bottom: 0.5em; }
     #select-area {
@@ -61,7 +59,7 @@
 <body>
   <button onclick="location.href='top_menu.html'">トップに戻る</button>
 
-  <div id="version-label">Ver.1 Rev.0810</div>
+  <div id="version-label">Ver.20250903</div>
   <div id="content-wrapper">
     <div id="purpose-area">
       <label for="purpose-input"><strong>目的：</strong></label>
@@ -70,7 +68,7 @@
        placeholder="入力例：mm/dd コース名 キャンセル対象者抽選">
     </div>
 
-    <h2>候補者一覧</h2>
+    <h2>候補者一覧（五十音順）</h2>
     <div id="select-area">
       <div class="loading-status">
         <span>読み込み中...</span>
@@ -83,67 +81,65 @@
   </div>
 
   <script>
+    // ===== データ取得設定 =====
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbzh4fi1uShyFDZLsGr0F8cduWNqacUTpmIYFZ5VBrC1qbPkzIa8YPDzrlF5_n9N-hVRBg/exec";
+    const MASTER_FOLDER = "master_data";
+    const IDPW_FILE = "id_pw_list.txt";
+
+    // 候補者リスト（{name, yomi} の配列）
     let CANDIDATES = [];
-    const gasUrl = 'https://script.google.com/macros/s/AKfycbzi42o5RlvzGZcGGtlGl_7Fvds2Iqo_du2qT10W0BJkkdQgL1_m0ok20L5DS4y09CMF/exec';
-    const folderKeyword = 'ranking_tool';
-    const inputFile = 'input_data.txt';
 
     // 起動時に候補者を1回だけ取得
     async function initCandidates() {
-      console.time("initCandidates_total");
       const area = document.getElementById("select-area");
-
       try {
-        const url = `${gasUrl}?action=read&folder=${folderKeyword}&file=${inputFile}`;
-        console.time("fetch_data");
-        const response = await fetch(url);
-        console.timeEnd("fetch_data");
-
+        const url = `${GAS_URL}?action=read&folder=${encodeURIComponent(MASTER_FOLDER)}&file=${encodeURIComponent(IDPW_FILE)}`;
+        const response = await fetch(url, { cache: "no-store" });
         if (!response.ok) throw new Error(`HTTPエラー ${response.status}`);
-
-        console.time("response_text");
         const text = await response.text();
-        console.timeEnd("response_text");
 
-        console.time("parse_candidates");
-        const firstLine = text.split(/\r?\n/)[0];
-        CANDIDATES = firstLine.split(',').slice(1)
-          .map(name => name.trim())
-          .filter(name => name);
-        console.timeEnd("parse_candidates");
+        // id_pw_list.txt は「氏名,ID,PW,権限,よみがな」形式を想定
+        CANDIDATES = text
+          .split(/\r?\n/)
+          .map(l => l.trim())
+          .filter(l => l && !l.startsWith("#") && l.includes(","))
+          .map(l => {
+            const cols = l.split(",");
+            return {
+              name: cols[0]?.trim(),
+              yomi: cols[4]?.trim() || cols[0]?.trim() // 読み仮名がなければ氏名を代用
+            };
+          })
+          .filter(obj => !!obj.name);
 
-        console.time("renderCandidates");
+        // 読み仮名でソート（五十音順）
+        const collator = new Intl.Collator("ja");
+        CANDIDATES.sort((a, b) => collator.compare(a.yomi, b.yomi));
+
         renderCandidates();
-        console.timeEnd("renderCandidates");
-
       } catch (e) {
         area.innerHTML = `<span style="color:red;">データ取得エラー: ${e.message}</span>`;
       }
-
-      console.timeEnd("initCandidates_total");
     }
 
     // 候補者ボタンを生成
     function renderCandidates() {
-      console.time("renderCandidates_DOM");
       const area = document.getElementById("select-area");
       area.innerHTML = '';
       const fragment = document.createDocumentFragment();
-      CANDIDATES.forEach(name => {
+      CANDIDATES.forEach(obj => {
         const btn = document.createElement("button");
-        btn.textContent = name;
+        btn.textContent = obj.name;
         btn.className = "select-btn";
-        if (name.length > 4) btn.classList.add("small-text");
+        if (obj.name.length > 4) btn.classList.add("small-text");
         btn.onclick = () => btn.classList.toggle("selected");
         fragment.appendChild(btn);
       });
       area.appendChild(fragment);
-      console.timeEnd("renderCandidates_DOM");
     }
 
     // 「順位決め」クリック処理
     function generateRanking() {
-      console.time("generateRanking_total");
       const resultArea = document.getElementById("result-area");
       const rankBtn = document.getElementById("rank-button");
 
@@ -158,18 +154,16 @@
       setTimeout(() => {
         showRankingResult();
         rankBtn.disabled = false;
-        console.timeEnd("generateRanking_total");
       }, 3000);
     }
 
     // 結果表示
     function showRankingResult() {
-      console.time("showRankingResult");
       const selected = Array.from(document.getElementsByClassName("select-btn"))
         .filter(btn => btn.classList.contains("selected"))
         .map(btn => btn.textContent);
 
-      const ordered = CANDIDATES.filter(name => selected.includes(name));
+      const ordered = CANDIDATES.filter(obj => selected.includes(obj.name)).map(obj => obj.name);
       const shuffled = shuffle([...ordered]);
       const purpose = document.getElementById("purpose-input").value.trim();
       const resultArea = document.getElementById("result-area");
@@ -184,9 +178,9 @@
       const now = new Date();
       const formatted = `${now.getFullYear()}年${String(now.getMonth()+1).padStart(2,'0')}月${String(now.getDate()).padStart(2,'0')}日 ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
       resultArea.innerHTML += `<div style="margin-top:0.5em; font-size:1em;">実施：${formatted}</div>`;
-      console.timeEnd("showRankingResult");
     }
 
+    // シャッフル関数
     function shuffle(array) {
       for (let i = array.length - 1; i > 0; i--) {
         const r = Math.floor(Math.random() * (i + 1));
@@ -196,24 +190,18 @@
     }
 
     function adjustContentMargin() {
-      console.time("adjustContentMargin");
       const version = document.getElementById('version-label');
       const wrapper = document.getElementById('content-wrapper');
       const height = version.offsetHeight;
       wrapper.style.marginTop = (height * 1.2) + 'px';
-      console.timeEnd("adjustContentMargin");
     }
 
     window.onload = function() {
-      console.time("window_onload");
       initCandidates();
       adjustContentMargin();
-      console.timeEnd("window_onload");
     };
   </script>
   <script src="reload.js?v=20250724"></script>
 </body>
 </html>
-
-
 
