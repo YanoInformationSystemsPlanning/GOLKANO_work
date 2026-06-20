@@ -154,6 +154,10 @@
       const inputId = document.getElementById("inputId").value.trim();
       const inputPw = document.getElementById("inputPw").value.trim();
 
+      console.log("入力ID:", inputId);
+      console.log("入力PW:", inputPw);
+      console.log("読み込んだID/PW一覧:", idPwPairs);
+      
       if (!inputId || !inputPw) {
         showError("IDとPWを入力してください。");
         return;
